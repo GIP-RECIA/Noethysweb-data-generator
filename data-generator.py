@@ -82,15 +82,16 @@ def clean_data_strict():
 
 
 def generate_data():
-    """Génère les données de base : superuser et configuration initiale"""
-    print("Génération des données de base...")
+    """Génère toutes les données de base par étapes successives"""
+    print("=== GÉNÉRATION DES DONNÉES DE BASE ===")
 
     # Importer les modèles Django nécessaires
-    # from django.db import connection
-    from core.models import Utilisateur
-
+    from core.models import (
+        Utilisateur, Structure, Organisateur, Caisse, Regime
+    )
     try:
-        # Créer le superuser avec le modèle Utilisateur de Noethys
+        # Étape 0 : Superuser
+        print("\n--- ÉTAPE 0 : SUPERUSER ---")
         if not Utilisateur.objects.filter(username='admin').exists():
             user = Utilisateur.objects.create_superuser(
                 username='admin',
@@ -101,7 +102,75 @@ def generate_data():
         else:
             print("Superuser 'admin' existe déjà")
 
-        print("Génération des données terminée!")
+        # Étape 1 : Données de base
+        print("\n--- ÉTAPE 1 : DONNÉES DE BASE ---")
+
+        # Structure
+        if not Structure.objects.exists():
+            structure = Structure.objects.create(
+                nom="Mairie de Test Ville",
+                rue="1 Place de la Mairie",
+                cp="75001",
+                ville="Paris",
+                tel="0100000000",
+                mail="contact@testville.fr",
+                site="www.testville.fr"
+            )
+            print(f"Structure créée: {structure.nom}")
+        else:
+            structure = Structure.objects.first()
+            print(f"Structure existante: {structure.nom}")
+
+        # Organisateur
+        if not Organisateur.objects.exists():
+            organisateur = Organisateur.objects.create(
+                nom="Association Test",
+                rue="5 Rue de l'Association",
+                cp="75002",
+                ville="Paris",
+                tel="0100000001",
+                mail="contact@association-test.fr",
+                site="www.association-test.fr"
+            )
+            print(f"Organisateur créé: {organisateur.nom}")
+        else:
+            organisateur = Organisateur.objects.first()
+            print(f"Organisateur existant: {organisateur.nom}")
+
+        # Caisses et Régimes
+        caisses_data = [
+            {
+                "nom": "CAF",
+                "regime": {"nom": "CAF"}
+            },
+            {
+                "nom": "MSA",
+                "regime": {"nom": "MSA"}
+            }
+        ]
+
+        for caisse_data in caisses_data:
+            if not Caisse.objects.filter(nom=caisse_data["nom"]).exists():
+                regime_data = caisse_data["regime"]
+
+                # Créer le régime d'abord
+                regime, created = Regime.objects.get_or_create(
+                    nom=regime_data["nom"]
+                )
+                if created:
+                    print(f"Régime créé: {regime.nom}")
+
+                # Créer la caisse
+                caisse = Caisse.objects.create(
+                    nom=caisse_data["nom"],
+                    regime=regime
+                )
+                print(f"Caisse créée: {caisse.nom} (régime: {regime.nom})")
+            else:
+                caisse = Caisse.objects.get(nom=caisse_data["nom"])
+                print(f"Caisse existante: {caisse.nom}")
+
+        print("\n=== GÉNÉRATION TERMINÉE ===")
 
     except Exception as e:
         print(f"Erreur lors de la génération des données: {e}")

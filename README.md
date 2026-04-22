@@ -22,6 +22,7 @@ python manage.py shell
 Ensuite voici les commandes disponibles :
 - `clean_data()` : Vide toutes les données de test
 - `generate_data()` : Génère les données de test
+- `clean_and_generate()` : Nettoie et génère les données de test
 
 Identifiants de connexion de l'administrateur :
 - Email : admin
