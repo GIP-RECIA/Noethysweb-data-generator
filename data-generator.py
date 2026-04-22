@@ -79,3 +79,37 @@ def clean_data_strict():
             cursor.execute("PRAGMA foreign_keys = ON")
         except Exception:
             pass
+
+
+def generate_data():
+    """Génère les données de base : superuser et configuration initiale"""
+    print("Génération des données de base...")
+
+    # Importer les modèles Django nécessaires
+    # from django.db import connection
+    from core.models import Utilisateur
+
+    try:
+        # Créer le superuser avec le modèle Utilisateur de Noethys
+        if not Utilisateur.objects.filter(username='admin').exists():
+            user = Utilisateur.objects.create_superuser(
+                username='admin',
+                email='admin@demo.fr',
+                password='password'
+            )
+            print(f"Superuser créé: {user.username} ({user.email})")
+        else:
+            print("Superuser 'admin' existe déjà")
+
+        print("Génération des données terminée!")
+
+    except Exception as e:
+        print(f"Erreur lors de la génération des données: {e}")
+
+
+def clean_and_generate():
+    """Nettoie la base et génère les données de base en une seule commande"""
+    print("=== NETTOYAGE COMPLET + GÉNÉRATION DONNÉES ===")
+    clean_data_strict()
+    generate_data()
+    print("=== OPÉRATION TERMINÉE ===")
