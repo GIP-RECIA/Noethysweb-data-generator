@@ -170,6 +170,204 @@ def generate_data():
                 caisse = Caisse.objects.get(nom=caisse_data["nom"])
                 print(f"Caisse existante: {caisse.nom}")
 
+        # Étape 2 : Configuration système
+        print("\n--- ÉTAPE 2 : CONFIGURATION SYSTÈME ---")
+
+        # Importer les modèles de l'étape 2
+        from core.models import (
+            TypeQuotient, NiveauScolaire, CategorieTravail, 
+            TypeMaladie, TypeVaccin, TypeSieste, Ferie,
+            ModeleDocument, ModeleEmail, ListeDiffusion,
+            CategorieInformation
+        )
+
+        # Types de quotients familiaux
+        types_quotients = ["QF", "QF1", "QF2", "QF3"]
+
+        for type_q in types_quotients:
+            if not TypeQuotient.objects.filter(nom=type_q).exists():
+                TypeQuotient.objects.create(nom=type_q)
+                print(f"TypeQuotient créé: {type_q}")
+
+        # Niveaux scolaires
+        niveaux_scolaires = [
+            {"nom": "TPS", "ordre": 1},
+            {"nom": "PS", "ordre": 2},
+            {"nom": "MS", "ordre": 3},
+            {"nom": "GS", "ordre": 4},
+            {"nom": "CP", "ordre": 5},
+            {"nom": "CE1", "ordre": 6},
+            {"nom": "CE2", "ordre": 7},
+            {"nom": "CM1", "ordre": 8},
+            {"nom": "CM2", "ordre": 9},
+            {"nom": "6ème", "ordre": 10},
+            {"nom": "5ème", "ordre": 11},
+            {"nom": "4ème", "ordre": 12},
+            {"nom": "3ème", "ordre": 13}
+        ]
+
+        for niveau in niveaux_scolaires:
+            if not NiveauScolaire.objects.filter(nom=niveau["nom"]).exists():
+                NiveauScolaire.objects.create(**niveau)
+                print(f"NiveauScolaire créé: {niveau['nom']}")
+
+        # Catégories de travail
+        categories_travail = [
+            "Agriculteur exploitant",
+            "Artisan commerçant", 
+            "Cadre supérieur",
+            "Profession intermédiaire",
+            "Employé",
+            "Ouvrier qualifié",
+            "Ouvrier non qualifié",
+            "Inactif"
+        ]
+
+        for cat in categories_travail:
+            if not CategorieTravail.objects.filter(nom=cat).exists():
+                CategorieTravail.objects.create(nom=cat)
+                print(f"CategorieTravail créée: {cat}")
+
+        # Types de maladies
+        types_maladies = [
+            "Maladie bénigne",
+            "Maladie moyenne", 
+            "Maladie grave",
+            "Maladie chronique",
+            "Allergie",
+            "Handicap"
+        ]
+
+        for maladie in types_maladies:
+            if not TypeMaladie.objects.filter(nom=maladie).exists():
+                TypeMaladie.objects.create(nom=maladie)
+                print(f"TypeMaladie créé: {maladie}")
+
+        # Types de vaccins
+        types_vaccins = [
+            "BCG",
+            "DTCoq Polio",
+            "ROR",
+            "Hépatite B",
+            "Hib",
+            "Pneumocoque",
+            "Méningocoque C",
+            "Grippe saisonnière"
+        ]
+
+        for vaccin in types_vaccins:
+            if not TypeVaccin.objects.filter(nom=vaccin).exists():
+                TypeVaccin.objects.create(nom=vaccin)
+                print(f"TypeVaccin créé: {vaccin}")
+
+        # Types de siestes
+        types_siestes = [
+            "Pas de sieste",
+            "Sieste courte (< 1h)",
+            "Sieste moyenne (1-2h)", 
+            "Sieste longue (> 2h)"
+        ]
+
+        for sieste in types_siestes:
+            if not TypeSieste.objects.filter(nom=sieste).exists():
+                TypeSieste.objects.create(nom=sieste)
+                print(f"TypeSieste créé: {sieste}")
+
+        # Jours fériés français (année en cours)
+        from datetime import date
+        annee = date.today().year
+        jours_feries = [
+            {"nom": "Jour de l'an", "jour": 1, "mois": 1,
+             "annee": annee, "type": "fixe"},
+            {"nom": "Fête du travail", "jour": 1, "mois": 5,
+             "annee": annee, "type": "fixe"},
+            {"nom": "Victoire 1945", "jour": 8, "mois": 5,
+             "annee": annee, "type": "fixe"},
+            {"nom": "Fête nationale", "jour": 14, "mois": 7,
+             "annee": annee, "type": "fixe"},
+            {"nom": "Assomption", "jour": 15, "mois": 8,
+             "annee": annee, "type": "fixe"},
+            {"nom": "Toussaint", "jour": 1, "mois": 11,
+             "annee": annee, "type": "fixe"},
+            {"nom": "Armistice 1918", "jour": 11, "mois": 11,
+             "annee": annee, "type": "fixe"},
+            {"nom": "Noël", "jour": 25, "mois": 12,
+             "annee": annee, "type": "fixe"}
+        ]
+
+        for ferie in jours_feries:
+            if not Ferie.objects.filter(
+                nom=ferie["nom"], annee=ferie["annee"]
+            ).exists():
+                Ferie.objects.create(**ferie)
+                print(f"Ferie créé: {ferie['nom']} "
+                      f"({ferie['jour']}/{ferie['mois']}/{ferie['annee']})")
+
+        # Modèles de documents
+        modeles_documents = [
+            {"nom": "Attestation de présence",
+             "categorie": "Attestation", "largeur": 210, "hauteur": 297},
+            {"nom": "Facture",
+             "categorie": "Facture", "largeur": 210, "hauteur": 297},
+            {"nom": "Certificat de scolarité",
+             "categorie": "Certificat", "largeur": 210, "hauteur": 297},
+            {"nom": "Autorisation de sortie",
+             "categorie": "Autorisation", "largeur": 210, "hauteur": 297},
+            {"nom": "Convocation parents",
+             "categorie": "Convocation", "largeur": 210, "hauteur": 297},
+            {"nom": "Bulletin d'inscription",
+             "categorie": "Inscription", "largeur": 210, "hauteur": 297}
+        ]
+
+        for modele in modeles_documents:
+            if not ModeleDocument.objects.filter(nom=modele["nom"]).exists():
+                ModeleDocument.objects.create(**modele)
+                print(f"ModeleDocument créé: {modele['nom']}")
+
+        # Modèles d'emails
+        modeles_emails = [
+            "Rappel d'échéance",
+            "Information générale",
+            "Convocation réunion",
+            "Changement de planning",
+            "Urgence fermeture"
+        ]
+
+        for modele in modeles_emails:
+            if not ModeleEmail.objects.filter(nom=modele).exists():
+                ModeleEmail.objects.create(nom=modele)
+                print(f"ModeleEmail créé: {modele}")
+
+        # Listes de diffusion
+        listes_diffusion = [
+            "Tous les parents",
+            "Parents CP-CE1",
+            "Parents CE2-CM1", 
+            "Personnel enseignant",
+            "Direction",
+            "Intervenants extérieurs"
+        ]
+
+        for liste in listes_diffusion:
+            if not ListeDiffusion.objects.filter(nom=liste).exists():
+                ListeDiffusion.objects.create(nom=liste)
+                print(f"ListeDiffusion créée: {liste}")
+
+        # Catégories d'informations
+        categories_info = [
+            "Information générale",
+            "Urgence",
+            "Planning",
+            "Pédagogique",
+            "Administratif",
+            "Événementiel"
+        ]
+
+        for cat in categories_info:
+            if not CategorieInformation.objects.filter(nom=cat).exists():
+                CategorieInformation.objects.create(nom=cat)
+                print(f"CategorieInformation créée: {cat}")
+
         print("\n=== GÉNÉRATION TERMINÉE ===")
 
     except Exception as e:
