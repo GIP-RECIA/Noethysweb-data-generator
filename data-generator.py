@@ -1002,19 +1002,56 @@ def generate_data():
                 print(f"ModeReglement créé: {mode['label']}")
 
         # Comptes bancaires
-        structure = Structure.objects.first()
         comptes_bancaires = [
             {
                 "nom": "Compte principal",
                 "defaut": True,
                 "raison": "Mairie de Test Ville",
-                "structure": structure
+                "numero": "FR7630004000031234567890143",
+                "code_etab": "30004",
+                "code_guichet": "00323",
+                "code_nne": "12345678901",
+                "cle_rib": "43",
+                "cle_iban": "14",
+                "iban": "FR7630004000031234567890143",
+                "bic": "BNPAFRPPXXX",
+                "code_ics": "FR76ZZZ123456",
+                "dft_titulaire": "Mairie de Test Ville",
+                "dft_iban": "FR7630004000031234567890143",
+                "adresse_service": "Service Financier",
+                "adresse_rue": "Rue de la Mairie",
+                "adresse_numero": "1",
+                "adresse_batiment": "Bâtiment A",
+                "adresse_etage": "1er étage",
+                "adresse_boite": "101",
+                "adresse_cp": "37000",
+                "adresse_ville": "TESTVILLE",
+                "adresse_pays": "FR"
             },
             {
                 "nom": "Compte secondaire",
                 "defaut": False,
                 "raison": "Association Test",
-                "structure": structure
+                "numero": "FR7630004000039876543210256",
+                "code_etab": "30004",
+                "code_guichet": "00323",
+                "code_nne": "98765432109",
+                "cle_rib": "56",
+                "cle_iban": "25",
+                "iban": "FR7630004000039876543210256",
+                "bic": "BNPAFRPPXXX",
+                "code_ics": "FR76ZZZ654321",
+                "dft_titulaire": "Association Test",
+                "dft_iban": "FR7630004000039876543210256",
+                "adresse_service": "Trésorerie",
+                "adresse_rue": "Avenue des Sports",
+                "adresse_numero": "15",
+                "adresse_batiment": "Bâtiment B",
+                "adresse_etage": "RDC",
+                "adresse_boite": "200",
+                "adresse_cp": "37000",
+                "adresse_ville": "TESTVILLE",
+                "adresse_pays": "FR"
             }
         ]
 
