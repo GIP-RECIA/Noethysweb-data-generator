@@ -196,19 +196,19 @@ def generate_data():
 
         # Niveaux scolaires
         niveaux_scolaires = [
-            {"nom": "TPS", "ordre": 1},
-            {"nom": "PS", "ordre": 2},
-            {"nom": "MS", "ordre": 3},
-            {"nom": "GS", "ordre": 4},
-            {"nom": "CP", "ordre": 5},
-            {"nom": "CE1", "ordre": 6},
-            {"nom": "CE2", "ordre": 7},
-            {"nom": "CM1", "ordre": 8},
-            {"nom": "CM2", "ordre": 9},
-            {"nom": "6ème", "ordre": 10},
-            {"nom": "5ème", "ordre": 11},
-            {"nom": "4ème", "ordre": 12},
-            {"nom": "3ème", "ordre": 13}
+            {"nom": "TPS", "abrege": "TPS", "ordre": 1},
+            {"nom": "PS", "abrege": "PS", "ordre": 2},
+            {"nom": "MS", "abrege": "MS", "ordre": 3},
+            {"nom": "GS", "abrege": "GS", "ordre": 4},
+            {"nom": "CP", "abrege": "CP", "ordre": 5},
+            {"nom": "CE1", "abrege": "CE1", "ordre": 6},
+            {"nom": "CE2", "abrege": "CE2", "ordre": 7},
+            {"nom": "CM1", "abrege": "CM1", "ordre": 8},
+            {"nom": "CM2", "abrege": "CM2", "ordre": 9},
+            {"nom": "6ème", "abrege": "6ème", "ordre": 10},
+            {"nom": "5ème", "abrege": "5ème", "ordre": 11},
+            {"nom": "4ème", "abrege": "4ème", "ordre": 12},
+            {"nom": "3ème", "abrege": "3ème", "ordre": 13}
         ]
 
         for niveau in niveaux_scolaires:
@@ -234,19 +234,46 @@ def generate_data():
                 print(f"CategorieTravail créée: {cat}")
 
         # Types de maladies
+        from datetime import date
+
         types_maladies = [
-            "Maladie bénigne",
-            "Maladie moyenne",
-            "Maladie grave",
-            "Maladie chronique",
-            "Allergie",
-            "Handicap"
+            {"nom": "Maladie bénigne", "vaccin_obligatoire": False},
+            {"nom": "Maladie moyenne", "vaccin_obligatoire": False},
+            {"nom": "Maladie grave", "vaccin_obligatoire": False},
+            {"nom": "Maladie chronique", "vaccin_obligatoire": False},
+            {"nom": "Allergie", "vaccin_obligatoire": False},
+            {"nom": "Handicap", "vaccin_obligatoire": False},
+            # Vaccins obligatoires sans restriction
+            {"nom": "Rougeole", "vaccin_obligatoire": True},
+            {"nom": "Oreillons", "vaccin_obligatoire": True},
+            {"nom": "Rubéole", "vaccin_obligatoire": True},
+            {"nom": "Coqueluche", "vaccin_obligatoire": True},
+            {"nom": "Tétanos", "vaccin_obligatoire": True},
+            {"nom": "Poliomyélite", "vaccin_obligatoire": True},
+            {"nom": "Diphtérie", "vaccin_obligatoire": True},
+            # Vaccins obligatoires avec restriction de date
+            {"nom": "Haemophilus influenzae B", "vaccin_obligatoire": True,
+             "vaccin_date_naiss_min": date(1992, 1, 1)},
+            {"nom": "Hépatite B", "vaccin_obligatoire": True,
+             "vaccin_date_naiss_min": date(2018, 1, 1)},
+            {"nom": "Méningocoque C", "vaccin_obligatoire": True,
+             "vaccin_date_naiss_min": date(2018, 1, 1)},
+            {"nom": "Pneumocoque", "vaccin_obligatoire": True,
+             "vaccin_date_naiss_min": date(2018, 1, 1)},
+            # Maladies sans vaccin obligatoire
+            {"nom": "Grippe saisonnière", "vaccin_obligatoire": False},
+            {"nom": "COVID-19", "vaccin_obligatoire": False}
         ]
 
         for maladie in types_maladies:
-            if not TypeMaladie.objects.filter(nom=maladie).exists():
-                TypeMaladie.objects.create(nom=maladie)
-                print(f"TypeMaladie créé: {maladie}")
+            if not TypeMaladie.objects.filter(nom=maladie["nom"]).exists():
+                TypeMaladie.objects.create(**maladie)
+                if maladie["vaccin_obligatoire"]:
+                    vaccin_status = "(vaccin obligatoire)"
+                else:
+                    vaccin_status = ""
+                print(f"TypeMaladie créé: {maladie['nom']} "
+                      f"{vaccin_status}")
 
         # Types de vaccins
         types_vaccins = [
