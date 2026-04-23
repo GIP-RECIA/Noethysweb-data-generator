@@ -113,6 +113,7 @@ def generate_data():
                 cp="75001",
                 ville="Paris",
                 tel="0100000000",
+                fax="0100000001",
                 mail="contact@testville.fr",
                 site="www.testville.fr"
             )
@@ -128,9 +129,13 @@ def generate_data():
                 rue="5 Rue de l'Association",
                 cp="75002",
                 ville="Paris",
-                tel="0100000001",
+                tel="0110000000",
+                fax="0110000001",
                 mail="contact@association-test.fr",
-                site="www.association-test.fr"
+                site="www.association-test.fr",
+                num_agrement="123456789",
+                num_siret="12345678901234",
+                code_ape="1234A"
             )
             print(f"Organisateur créé: {organisateur.nom}")
         else:
@@ -175,7 +180,7 @@ def generate_data():
 
         # Importer les modèles de l'étape 2
         from core.models import (
-            TypeQuotient, NiveauScolaire, CategorieTravail, 
+            TypeQuotient, NiveauScolaire, CategorieTravail,
             TypeMaladie, TypeVaccin, TypeSieste, Ferie,
             ModeleDocument, ModeleEmail, ListeDiffusion,
             CategorieInformation
@@ -214,7 +219,7 @@ def generate_data():
         # Catégories de travail
         categories_travail = [
             "Agriculteur exploitant",
-            "Artisan commerçant", 
+            "Artisan commerçant",
             "Cadre supérieur",
             "Profession intermédiaire",
             "Employé",
@@ -231,7 +236,7 @@ def generate_data():
         # Types de maladies
         types_maladies = [
             "Maladie bénigne",
-            "Maladie moyenne", 
+            "Maladie moyenne",
             "Maladie grave",
             "Maladie chronique",
             "Allergie",
@@ -264,7 +269,7 @@ def generate_data():
         types_siestes = [
             "Pas de sieste",
             "Sieste courte (< 1h)",
-            "Sieste moyenne (1-2h)", 
+            "Sieste moyenne (1-2h)",
             "Sieste longue (> 2h)"
         ]
 
@@ -342,7 +347,7 @@ def generate_data():
         listes_diffusion = [
             "Tous les parents",
             "Parents CP-CE1",
-            "Parents CE2-CM1", 
+            "Parents CE2-CM1",
             "Personnel enseignant",
             "Direction",
             "Intervenants extérieurs"
@@ -367,6 +372,125 @@ def generate_data():
             if not CategorieInformation.objects.filter(nom=cat).exists():
                 CategorieInformation.objects.create(nom=cat)
                 print(f"CategorieInformation créée: {cat}")
+
+        # Étape 3 : Activités et infrastructures
+        print("\n--- ÉTAPE 3 : ACTIVITÉS ET INFRASTRUCTURES ---")
+
+        # Importer les modèles de l'étape 3
+        from core.models import (
+            Activite, CompteBancaire, ModeReglement, Emetteur
+        )
+        from datetime import date, timedelta
+
+        # Modes de règlement
+        modes_reglement = [
+            {"label": "Espèces", "type_comptable": "caisse"},
+            {"label": "Chèque", "type_comptable": "banque",
+             "numero_piece": "NUM"},
+            {"label": "Virement", "type_comptable": "banque",
+             "numero_piece": "NUM"},
+            {"label": "Carte bancaire", "type_comptable": "banque",
+             "numero_piece": "NUM"},
+            {"label": "Prélèvement", "type_comptable": "banque",
+             "numero_piece": "NUM"}
+        ]
+
+        for mode in modes_reglement:
+            if not ModeReglement.objects.filter(label=mode["label"]).exists():
+                ModeReglement.objects.create(**mode)
+                print(f"ModeReglement créé: {mode['label']}")
+
+        # Comptes bancaires
+        structure = Structure.objects.first()
+        comptes_bancaires = [
+            {
+                "nom": "Compte principal",
+                "defaut": True,
+                "raison": "Mairie de Test Ville",
+                "structure": structure
+            },
+            {
+                "nom": "Compte secondaire",
+                "defaut": False,
+                "raison": "Association Test",
+                "structure": structure
+            }
+        ]
+
+        for compte in comptes_bancaires:
+            if not CompteBancaire.objects.filter(nom=compte["nom"]).exists():
+                CompteBancaire.objects.create(**compte)
+                print(f"CompteBancaire créé: {compte['nom']}")
+
+        # Activités
+        date_debut = date.today()
+        date_fin = date_debut + timedelta(days=365)
+
+        activites = [
+            {
+                "nom": "Centre de loisirs - Vacances de printemps",
+                "abrege": "CL-Printemps",
+                "date_debut": date_debut + timedelta(days=30),
+                "date_fin": date_debut + timedelta(days=40),
+                "nbre_inscrits_max": 50,
+                "portail_inscriptions_affichage": "PERIODE"
+            },
+            {
+                "nom": "Atelier périscolaire - Mercredi",
+                "abrege": "APS-Mercredi",
+                "date_debut": date_debut,
+                "date_fin": date_fin,
+                "nbre_inscrits_max": 30,
+                "portail_inscriptions_affichage": "TOUJOURS"
+            },
+            {
+                "nom": "Stage d'été - Sport et nature",
+                "abrege": "SE-Ete",
+                "date_debut": date_debut + timedelta(days=120),
+                "date_fin": date_debut + timedelta(days=135),
+                "nbre_inscrits_max": 40,
+                "portail_inscriptions_affichage": "PERIODE"
+            },
+            {
+                "nom": "Cantine scolaire",
+                "abrege": "CAN-Scolaire",
+                "date_debut": date_debut,
+                "date_fin": date_fin,
+                "nbre_inscrits_max": 100,
+                "portail_inscriptions_affichage": "TOUJOURS"
+            },
+            {
+                "nom": "Accueil périscolaire - Matin",
+                "abrege": "APP-Matin",
+                "date_debut": date_debut,
+                "date_fin": date_fin,
+                "nbre_inscrits_max": 60,
+                "portail_inscriptions_affichage": "TOUJOURS"
+            }
+        ]
+
+        for activite in activites:
+            if not Activite.objects.filter(nom=activite["nom"]).exists():
+                Activite.objects.create(**activite)
+                print(f"Activite créée: {activite['nom']}")
+
+        # Émetteurs de règlement
+        mode_especes = ModeReglement.objects.get(label="Espèces")
+        mode_cheque = ModeReglement.objects.get(label="Chèque")
+        mode_virement = ModeReglement.objects.get(label="Virement")
+
+        emetteurs = [
+            {"mode": mode_especes, "nom": "Caisse principale"},
+            {"mode": mode_cheque, "nom": "Parents - Chèques"},
+            {"mode": mode_virement, "nom": "Parents - Virements"},
+            {"mode": mode_especes, "nom": "Caisse secondaire"},
+            {"mode": mode_cheque, "nom": "Mairie - Chèques"}
+        ]
+
+        for emetteur in emetteurs:
+            if not Emetteur.objects.filter(nom=emetteur["nom"]).exists():
+                Emetteur.objects.create(**emetteur)
+                print(f"Emetteur créé: {emetteur['nom']}")
 
         print("\n=== GÉNÉRATION TERMINÉE ===")
 
