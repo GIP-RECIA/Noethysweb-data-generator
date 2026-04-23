@@ -441,24 +441,95 @@ def generate_data():
 
         # Modèles de documents
         modeles_documents = [
-            {"nom": "Attestation de présence",
-             "categorie": "Attestation", "largeur": 210, "hauteur": 297},
-            {"nom": "Facture",
-             "categorie": "Facture", "largeur": 210, "hauteur": 297},
-            {"nom": "Certificat de scolarité",
-             "categorie": "Certificat", "largeur": 210, "hauteur": 297},
-            {"nom": "Autorisation de sortie",
-             "categorie": "Autorisation", "largeur": 210, "hauteur": 297},
-            {"nom": "Convocation parents",
-             "categorie": "Convocation", "largeur": 210, "hauteur": 297},
-            {"nom": "Bulletin d'inscription",
-             "categorie": "Inscription", "largeur": 210, "hauteur": 297}
+            # Catégorie: attestation
+            {"nom": "Attestation de présence", "categorie": "attestation",
+             "largeur": 210, "hauteur": 297, "defaut": True, "objets": "[]"},
+            {"nom": "Attestation de scolarité", "categorie": "attestation",
+             "largeur": 210, "hauteur": 297, "defaut": False, "objets": "[]"},
+
+            # Catégorie: facture
+            {"nom": "Facture standard", "categorie": "facture",
+             "largeur": 210, "hauteur": 297, "defaut": True, "objets": "[]"},
+            {"nom": "Facture simplifiée", "categorie": "facture",
+             "largeur": 210, "hauteur": 297, "defaut": False, "objets": "[]"},
+
+            # Catégorie: rappel
+            {"nom": "Lettre de rappel première", "categorie": "rappel",
+             "largeur": 210, "hauteur": 297, "defaut": True, "objets": "[]"},
+            {"nom": "Lettre de rappel deuxième", "categorie": "rappel",
+             "largeur": 210, "hauteur": 297, "defaut": False, "objets": "[]"},
+            {"nom": "Mise en demeure", "categorie": "rappel",
+             "largeur": 210, "hauteur": 297, "defaut": False, "objets": "[]"},
+
+            # Catégorie: reglement
+            {"nom": "Reçu de règlement", "categorie": "reglement",
+             "largeur": 210, "hauteur": 297, "defaut": True, "objets": "[]"},
+            {"nom": "Avis de paiement", "categorie": "reglement",
+             "largeur": 210, "hauteur": 297, "defaut": False, "objets": "[]"},
+
+            # Catégorie: inscription
+            {"nom": "Bulletin d'inscription", "categorie": "inscription",
+             "largeur": 210, "hauteur": 297, "defaut": True, "objets": "[]"},
+            {"nom": "Convocation inscription", "categorie": "inscription",
+             "largeur": 210, "hauteur": 297, "defaut": False, "objets": "[]"},
+
+            # Catégorie: individu
+            {"nom": "Fiche individuelle", "categorie": "individu",
+             "largeur": 210, "hauteur": 297, "defaut": True, "objets": "[]"},
+            {"nom": "Certificat médical", "categorie": "individu",
+             "largeur": 210, "hauteur": 297, "defaut": False, "objets": "[]"},
+
+            # Catégorie: famille
+            {"nom": "Fiche famille", "categorie": "famille",
+             "largeur": 210, "hauteur": 297, "defaut": True, "objets": "[]"},
+            {"nom": "Autorisation de sortie", "categorie": "famille",
+             "largeur": 210, "hauteur": 297, "defaut": False, "objets": "[]"},
+
+            # Catégorie: cotisation
+            {"nom": "Reçu cotisation", "categorie": "cotisation",
+             "largeur": 210, "hauteur": 297, "defaut": True, "objets": "[]"},
+            {"nom": "Attestation adhésion", "categorie": "cotisation",
+             "largeur": 210, "hauteur": 297, "defaut": False, "objets": "[]"},
+
+            # Catégorie: attestation_fiscale
+            {"nom": "Attestation fiscale annuelle",
+             "categorie": "attestation_fiscale",
+             "largeur": 210, "hauteur": 297, "defaut": True, "objets": "[]"},
+
+            # Catégorie: devis
+            {"nom": "Devis standard", "categorie": "devis",
+             "largeur": 210, "hauteur": 297, "defaut": True, "objets": "[]"},
+            {"nom": "Devis simplifié", "categorie": "devis",
+             "largeur": 210, "hauteur": 297, "defaut": False, "objets": "[]"},
+
+            # Catégorie: location
+            {"nom": "Contrat de location", "categorie": "location",
+             "largeur": 210, "hauteur": 297, "defaut": True, "objets": "[]"},
+            {"nom": "État des lieux", "categorie": "location",
+             "largeur": 210, "hauteur": 297, "defaut": False, "objets": "[]"},
+
+            # Catégorie: location_demande
+            {"nom": "Demande de location", "categorie": "location_demande",
+             "largeur": 210, "hauteur": 297, "defaut": True, "objets": "[]"},
+            {"nom": "Confirmation de location",
+             "categorie": "location_demande",
+             "largeur": 210, "hauteur": 297, "defaut": False, "objets": "[]"},
+
+            # Catégorie: fond (calques de fond)
+            {"nom": "En-tête standard", "categorie": "fond",
+             "largeur": 210, "hauteur": 297, "defaut": True, "objets": "[]"},
+            {"nom": "Pied de page", "categorie": "fond",
+             "largeur": 210, "hauteur": 297, "defaut": False, "objets": "[]"},
+            {"nom": "Filigrane", "categorie": "fond",
+             "largeur": 210, "hauteur": 297, "defaut": False, "objets": "[]"}
         ]
 
         for modele in modeles_documents:
             if not ModeleDocument.objects.filter(nom=modele["nom"]).exists():
                 ModeleDocument.objects.create(**modele)
-                print(f"ModeleDocument créé: {modele['nom']}")
+                defaut_info = " (défaut)" if modele["defaut"] else ""
+                print(f"ModeleDocument créé: {modele['nom']} "
+                      f"[{modele['categorie']}]{defaut_info}")
 
         # Modèles d'emails
         modeles_emails = [
