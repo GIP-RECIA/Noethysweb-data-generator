@@ -277,20 +277,73 @@ def generate_data():
 
         # Types de vaccins
         types_vaccins = [
-            "BCG",
-            "DTCoq Polio",
-            "ROR",
-            "Hépatite B",
-            "Hib",
-            "Pneumocoque",
-            "Méningocoque C",
-            "Grippe saisonnière"
+            {
+                "nom": "BCG",
+                "duree_validite": "j0-m0-a20",
+                "maladies": ["Tuberculose"]
+            },
+            {
+                "nom": "DTCoq Polio",
+                "duree_validite": "j0-m0-a10",
+                "maladies": ["Diphtérie", "Tétanos", "Coqueluche",
+                             "Poliomyélite"]
+            },
+            {
+                "nom": "ROR",
+                "duree_validite": "j0-m0-a20",
+                "maladies": ["Rougeole", "Oreillons", "Rubéole"]
+            },
+            {
+                "nom": "Hépatite B",
+                "duree_validite": "j0-m0-a20",
+                "maladies": ["Hépatite B"]
+            },
+            {
+                "nom": "Hib",
+                "duree_validite": "j0-m0-a5",
+                "maladies": ["Haemophilus influenzae B"]
+            },
+            {
+                "nom": "Pneumocoque",
+                "duree_validite": "j0-m0-a5",
+                "maladies": ["Pneumocoque"]
+            },
+            {
+                "nom": "Méningocoque C",
+                "duree_validite": "j0-m0-a5",
+                "maladies": ["Méningocoque"]
+            },
+            {
+                "nom": "Grippe saisonnière",
+                "duree_validite": "j0-m0-a1",
+                "maladies": ["Grippe saisonnière"]
+            },
+            {
+                "nom": "COVID-19",
+                "duree_validite": "j0-m6-a0",
+                "maladies": ["COVID-19"]
+            }
         ]
 
-        for vaccin in types_vaccins:
-            if not TypeVaccin.objects.filter(nom=vaccin).exists():
-                TypeVaccin.objects.create(nom=vaccin)
-                print(f"TypeVaccin créé: {vaccin}")
+        for vaccin_data in types_vaccins:
+            if not TypeVaccin.objects.filter(nom=vaccin_data["nom"]).exists():
+                vaccin = TypeVaccin.objects.create(
+                    nom=vaccin_data["nom"],
+                    duree_validite=vaccin_data["duree_validite"]
+                )
+
+                # Associer les maladies au vaccin
+                for nom_maladie in vaccin_data["maladies"]:
+                    try:
+                        maladie = TypeMaladie.objects.get(
+                            nom=nom_maladie)
+                        vaccin.types_maladies.add(maladie)
+                    except TypeMaladie.DoesNotExist:
+                        print(f"  Attention: Maladie '{nom_maladie}' "
+                              f"non trouvée")
+
+                duree_info = f" (validité: {vaccin_data['duree_validite']})"
+                print(f"TypeVaccin créé: {vaccin_data['nom']}{duree_info}")
 
         # Types de siestes
         types_siestes = [
@@ -305,35 +358,86 @@ def generate_data():
                 TypeSieste.objects.create(nom=sieste)
                 print(f"TypeSieste créé: {sieste}")
 
-        # Jours fériés français (année en cours)
+        # Jours fériés français
         from datetime import date
+        from dateutil.relativedelta import relativedelta
+        from dateutil.easter import easter
+
         annee = date.today().year
-        jours_feries = [
-            {"nom": "Jour de l'an", "jour": 1, "mois": 1,
-             "annee": annee, "type": "fixe"},
-            {"nom": "Fête du travail", "jour": 1, "mois": 5,
-             "annee": annee, "type": "fixe"},
-            {"nom": "Victoire 1945", "jour": 8, "mois": 5,
-             "annee": annee, "type": "fixe"},
-            {"nom": "Fête nationale", "jour": 14, "mois": 7,
-             "annee": annee, "type": "fixe"},
-            {"nom": "Assomption", "jour": 15, "mois": 8,
-             "annee": annee, "type": "fixe"},
-            {"nom": "Toussaint", "jour": 1, "mois": 11,
-             "annee": annee, "type": "fixe"},
-            {"nom": "Armistice 1918", "jour": 11, "mois": 11,
-             "annee": annee, "type": "fixe"},
-            {"nom": "Noël", "jour": 25, "mois": 12,
-             "annee": annee, "type": "fixe"}
+
+        # Jours fériés fixes (année = 0)
+        jours_feries_fixes = [
+            {"nom": "Jour de l'an", "jour": 1, "mois": 1, "annee": 0,
+             "type": "fixe"},
+            {"nom": "Fête du travail", "jour": 1, "mois": 5, "annee": 0,
+             "type": "fixe"},
+            {"nom": "Victoire 1945", "jour": 8, "mois": 5, "annee": 0,
+             "type": "fixe"},
+            {"nom": "Fête nationale", "jour": 14, "mois": 7, "annee": 0,
+             "type": "fixe"},
+            {"nom": "Assomption", "jour": 15, "mois": 8, "annee": 0,
+             "type": "fixe"},
+            {"nom": "Toussaint", "jour": 1, "mois": 11, "annee": 0,
+             "type": "fixe"},
+            {"nom": "Armistice 1918", "jour": 11, "mois": 11, "annee": 0,
+             "type": "fixe"},
+            {"nom": "Noël", "jour": 25, "mois": 12, "annee": 0,
+             "type": "fixe"}
         ]
+
+        # Jours fériés variables (calculés pour l'année en cours)
+        dimanche_paques = easter(annee)
+        lundi_paques = dimanche_paques + relativedelta(days=+1)
+        jeudi_ascension = dimanche_paques + relativedelta(days=+39)
+        lundi_pentecote = dimanche_paques + relativedelta(days=+50)
+
+        jours_feries_variables = [
+            {"nom": "Lundi de Pâques", "jour": lundi_paques.day,
+             "mois": lundi_paques.month, "annee": annee, "type": "variable"},
+            {"nom": "Jeudi de l'Ascension", "jour": jeudi_ascension.day,
+             "mois": jeudi_ascension.month, "annee": annee,
+             "type": "variable"},
+            {"nom": "Lundi de Pentecôte", "jour": lundi_pentecote.day,
+             "mois": lundi_pentecote.month, "annee": annee, "type": "variable"}
+        ]
+
+        # Jours fériés variables (calculés pour l'année suivante)
+        annee_suivante = annee + 1
+        dimanche_paques_suiv = easter(annee_suivante)
+        lundi_paques_suiv = dimanche_paques_suiv + relativedelta(days=+1)
+        jeudi_ascension_suiv = dimanche_paques_suiv + relativedelta(days=+39)
+        lundi_pentecote_suiv = dimanche_paques_suiv + relativedelta(days=+50)
+
+        jours_feries_variables_suiv = [
+            {"nom": "Lundi de Pâques", "jour": lundi_paques_suiv.day,
+             "mois": lundi_paques_suiv.month, "annee": annee_suivante,
+             "type": "variable"},
+            {"nom": "Jeudi de l'Ascension", "jour": jeudi_ascension_suiv.day,
+             "mois": jeudi_ascension_suiv.month, "annee": annee_suivante,
+             "type": "variable"},
+            {"nom": "Lundi de Pentecôte", "jour": lundi_pentecote_suiv.day,
+             "mois": lundi_pentecote_suiv.month, "annee": annee_suivante,
+             "type": "variable"}
+        ]
+
+        # Fusionner les trois listes
+        jours_feries = (jours_feries_fixes +
+                        jours_feries_variables +
+                        jours_feries_variables_suiv)
 
         for ferie in jours_feries:
             if not Ferie.objects.filter(
                 nom=ferie["nom"], annee=ferie["annee"]
             ).exists():
+                print(f"Création du jour férié: {ferie['nom']} "
+                      f"({ferie['type']})")
                 Ferie.objects.create(**ferie)
-                print(f"Ferie créé: {ferie['nom']} "
-                      f"({ferie['jour']}/{ferie['mois']}/{ferie['annee']})")
+                if ferie["annee"] == 0:
+                    date_info = f"({ferie['jour']}/{ferie['mois']})"
+                else:
+                    date_info = (f"({ferie['jour']}/"
+                                 f"{ferie['mois']}/{ferie['annee']})")
+                print(f"Ferie créé: {ferie['nom']} {date_info}")
 
         # Modèles de documents
         modeles_documents = [
