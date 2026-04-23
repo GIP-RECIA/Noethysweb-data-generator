@@ -240,28 +240,29 @@ def generate_data():
             {"nom": "Maladie bénigne", "vaccin_obligatoire": False},
             {"nom": "Maladie moyenne", "vaccin_obligatoire": False},
             {"nom": "Maladie grave", "vaccin_obligatoire": False},
-            {"nom": "Maladie chronique", "vaccin_obligatoire": False},
-            {"nom": "Allergie", "vaccin_obligatoire": False},
-            {"nom": "Handicap", "vaccin_obligatoire": False},
-            # Vaccins obligatoires sans restriction
-            {"nom": "Rougeole", "vaccin_obligatoire": True},
-            {"nom": "Oreillons", "vaccin_obligatoire": True},
-            {"nom": "Rubéole", "vaccin_obligatoire": True},
             {"nom": "Coqueluche", "vaccin_obligatoire": True},
             {"nom": "Tétanos", "vaccin_obligatoire": True},
             {"nom": "Poliomyélite", "vaccin_obligatoire": True},
             {"nom": "Diphtérie", "vaccin_obligatoire": True},
+            {"nom": "Tuberculose", "vaccin_obligatoire": True},
             # Vaccins obligatoires avec restriction de date
             {"nom": "Haemophilus influenzae B", "vaccin_obligatoire": True,
              "vaccin_date_naiss_min": date(1992, 1, 1)},
             {"nom": "Hépatite B", "vaccin_obligatoire": True,
              "vaccin_date_naiss_min": date(2018, 1, 1)},
-            {"nom": "Méningocoque C", "vaccin_obligatoire": True,
+            {"nom": "Méningocoque", "vaccin_obligatoire": True,
              "vaccin_date_naiss_min": date(2018, 1, 1)},
             {"nom": "Pneumocoque", "vaccin_obligatoire": True,
              "vaccin_date_naiss_min": date(2018, 1, 1)},
             # Maladies sans vaccin obligatoire
             {"nom": "Grippe saisonnière", "vaccin_obligatoire": False},
+            {"nom": "COVID-19", "vaccin_obligatoire": False},
+            {"nom": "Maladie chronique", "vaccin_obligatoire": False},
+            {"nom": "Allergie", "vaccin_obligatoire": False},
+            {"nom": "Handicap", "vaccin_obligatoire": False},
+            {"nom": "Rougeole", "vaccin_obligatoire": True},
+            {"nom": "Oreillons", "vaccin_obligatoire": True},
+            {"nom": "Rubéole", "vaccin_obligatoire": True},
             {"nom": "COVID-19", "vaccin_obligatoire": False}
         ]
 
