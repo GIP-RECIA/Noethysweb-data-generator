@@ -533,17 +533,415 @@ def generate_data():
 
         # Modèles d'emails
         modeles_emails = [
-            "Rappel d'échéance",
-            "Information générale",
-            "Convocation réunion",
-            "Changement de planning",
-            "Urgence fermeture"
+            # Catégorie: saisie_libre
+            {"nom": "Email standard", "categorie": "saisie_libre",
+             "description": "Modèle d'email standard pour communications",
+             "objet": "Information de {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {UTILISATEUR_PRENOM},</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+            {"nom": "Email formel", "categorie": "saisie_libre",
+             "description": "Modèle d'email formel pour communications",
+             "objet": "Communication officielle - {ORGANISATEUR_NOM}",
+             "html": "<p>Madame, Monsieur,</p>"
+                    "<p>Veuillez trouver ci-joint...</p>"
+                    "<p>Cordialement,<br/>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": False},
+
+            # Catégorie: facture
+            {"nom": "Facture standard", "categorie": "facture",
+             "description": "Envoi d'une facture à une famille",
+             "objet": "Facture n°{NUMERO_FACTURE} - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {NOM_FAMILLE},</p>"
+                    "<p>Veuillez trouver en pièce jointe votre facture "
+                    "n°{NUMERO_FACTURE} d'un montant de {SOLDE}€.</p>"
+                    "<p>Date d'échéance : {DATE_ECHEANCE}</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+            {"nom": "Rappel facture", "categorie": "facture",
+             "description": "Rappel de facture impayée",
+             "objet": "Rappel Facture n°{NUMERO_FACTURE} - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {NOM_FAMILLE},</p>"
+                    "<p>Nous vous rappelons que votre facture "
+                    "n°{NUMERO_FACTURE} d'un montant de {SOLDE}€ "
+                    "est toujours impayée.</p>"
+                    "<p>Date d'échéance : {DATE_ECHEANCE}</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": False},
+
+            # Catégorie: rappel
+            {"nom": "Rappel première", "categorie": "rappel",
+             "description": "Premier rappel de paiement",
+             "objet": "Rappel de paiement - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {NOM_FAMILLE},</p>"
+                    "<p>Nous vous rappelons un solde impayé de "
+                    "{SOLDE_CHIFFRES}€ ({SOLDE_LETTRES}).</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+            {"nom": "Mise en demeure", "categorie": "rappel",
+             "description": "Mise en demeure avant recouvrement",
+             "objet": "MISE EN DEMEURE - {ORGANISATEUR_NOM}",
+             "html": "<p>Madame, Monsieur,</p>"
+                    "<p>Suite à nos multiples relances, "
+                    "nous vous mettons en demeure de "
+                    "régler votre solde de {SOLDE_CHIFFRES}€.</p>"
+                    "<p>Sinon, nous procéderons à une action en justice.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": False},
+
+            # Catégorie: inscription
+            {"nom": "Confirmation inscription", "categorie": "inscription",
+             "description": "Confirmation inscription activité",
+             "objet": "Confirmation inscription - {ACTIVITE_NOM_COURT}",
+             "html": "<p>Bonjour {INDIVIDU_PRENOM},</p>"
+                    "<p>Nous vous confirmons votre inscription à "
+                    "{ACTIVITE_NOM_LONG} pour la période du "
+                    "{DATE_DEBUT} au {DATE_FIN}.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+            {"nom": "Annulation inscription", "categorie": "inscription",
+             "description": "Annulation inscription activité",
+             "objet": "Annulation inscription - {ACTIVITE_NOM_COURT}",
+             "html": "<p>Bonjour {INDIVIDU_PRENOM},</p>"
+                    "<p>Nous vous informons de l'annulation de votre "
+                    "inscription à {ACTIVITE_NOM_LONG}.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": False},
+
+            # Catégorie: attestation_presence
+            {"nom": "Attestation présence",
+             "categorie": "attestation_presence",
+             "description": "Envoi attestation présence",
+             "objet": "Attestation présence - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {INDIVIDU_PRENOM},</p>"
+                    "<p>Veuillez trouver en pièce jointe "
+                    "votre attestation de présence pour "
+                    "la période du {DATE_DEBUT} au {DATE_FIN}.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: cotisation
+            {"nom": "Renouvellement cotisation", "categorie": "cotisation",
+             "description": "Demande de renouvellement de cotisation",
+             "objet": "Renouvellement cotisation - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {NOM_FAMILLE},</p>"
+                    "<p>Votre cotisation {NOM_COTISATION} arrive à "
+                    "échéance le {DATE_FIN}.</p>"
+                    "<p>Pour renouveler : {URL_PORTAIL}</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+            {"nom": "Confirmation cotisation",
+             "categorie": "cotisation",
+             "description": "Confirmation paiement cotisation",
+             "objet": "Confirmation cotisation - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {NOM_FAMILLE},</p>"
+                    "<p>Nous vous confirmons le paiement "
+                    "de votre cotisation {NOM_COTISATION}.</p>"
+                    "<p>Votre carte est valide jusqu'au {DATE_FIN}.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": False},
+
+            # Catégorie: portail
+            {"nom": "Création compte portail", "categorie": "portail",
+             "description": "Création d'un compte portail pour une famille",
+             "objet": "Création de votre compte portail - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {NOM_FAMILLE},</p>"
+                    "<p>Votre compte portail a été créé.</p>"
+                    "<p>Identifiant : {IDENTIFIANT_INTERNET}<br/>"
+                    "Mot de passe : {MOTDEPASSE_INTERNET}</p>"
+                    "<p>URL : {URL_PORTAIL}</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: location
+            {"nom": "Confirmation location", "categorie": "location",
+             "description": "Confirmation d'une location",
+             "objet": "Confirmation location - {NOM_PRODUIT}",
+             "html": "<p>Bonjour,</p>"
+                    "<p>Nous vous confirmons la location de {NOM_PRODUIT} "
+                    "du {DATE_DEBUT} au {DATE_FIN}.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: location_demande
+            {"nom": "Confirmation demande location",
+             "categorie": "location_demande",
+             "description": "Confirmation de réception demande location",
+             "objet": "Confirmation demande location - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour,</p>"
+                    "<p>Nous avons bien reçu votre demande de location "
+                    "du {DATE}.</p>"
+                    "<p>Nous traitons votre demande et reviendrons "
+                    "vers vous rapidement.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: devis
+            {"nom": "Envoi devis", "categorie": "devis",
+             "description": "Envoi d'un devis à une famille",
+             "objet": "Devis n°{NUMERO_DEVIS} - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {NOM_FAMILLE},</p>"
+                    "<p>Veuillez trouver en pièce jointe votre devis "
+                    "n°{NUMERO_DEVIS} d'un montant de {SOLDE}€.</p>"
+                    "<p>Ce devis est valable jusqu'au {DATE_FIN}.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: reglement
+            {"nom": "Confirmation règlement",
+             "categorie": "reglement",
+             "description": "Confirmation de réception d'un règlement",
+             "objet": "Confirmation règlement n°{ID_REGLEMENT} "
+                    "- {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {NOM_PAYEUR},</p>"
+                    "<p>Nous vous confirmons la réception de "
+                    "votre règlement de {MONTANT_REGLEMENT}€ "
+                    "par {MODE_REGLEMENT}.</p>"
+                    "<p>N° quittancier : {NUM_QUITTANCIER}</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: recu_reglement
+            {"nom": "Envoi reçu règlement", "categorie": "recu_reglement",
+             "description": "Envoi d'un reçu de règlement",
+             "objet": "Reçu de règlement n°{NUMERO_RECU} - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {NOM_PAYEUR},</p>"
+                    "<p>Veuillez trouver en pièce jointe votre reçu "
+                    "de règlement n°{NUMERO_RECU} d'un montant de "
+                    "{MONTANT_REGLEMENT}€.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: releve_prestations
+            {"nom": "Relevé prestations", "categorie": "releve_prestations",
+             "description": "Envoi d'un relevé des prestations",
+             "objet": "Relevé des prestations - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {NOM_FAMILLE},</p>"
+                    "<p>Veuillez trouver en pièce jointe votre relevé "
+                    "des prestations au {DATE_EDITION_RELEVE}.</p>"
+                    "<p>Reste dû : {RESTE_DU}€</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: recu_don_oeuvres
+            {"nom": "Reçu don oeuvres", "categorie": "recu_don_oeuvres",
+             "description": "Envoi d'un reçu de don aux œuvres",
+             "objet": "Reçu de don n°{NUMERO_RECU} - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {NOM_DONATEUR},</p>"
+                    "<p>Nous vous remercions pour votre don de "
+                    "{MONTANT_CHIFFRES}€ ({MONTANT_LETTRES}).</p>"
+                    "<p>Veuillez trouver en pièce jointe votre reçu "
+                    "fiscal n°{NUMERO_RECU}.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: attestation_fiscale
+            {"nom": "Attestation fiscale", "categorie": "attestation_fiscale",
+             "description": "Envoi d'une attestation fiscale",
+             "objet": "Attestation fiscale - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {NOM_FAMILLE},</p>"
+                    "<p>Veuillez trouver en pièce jointe votre "
+                    "attestation fiscale pour la période du "
+                    "{DATE_DEBUT} au {DATE_FIN}.</p>"
+                    "<p>Montant facturé : {MONTANT_FACTURE}€<br/>"
+                    "Montant réglé : {MONTANT_REGLE}€</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: reservations
+            {"nom": "Liste réservations", "categorie": "reservations",
+             "description": "Envoi de la liste des réservations",
+             "objet": "Liste des réservations - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {NOM_FAMILLE},</p>"
+                    "<p>Veuillez trouver en pièce jointe la liste de "
+                    "vos réservations.</p>"
+                    "<p>Solde : {SOLDE}€</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: mandat_sepa
+            {"nom": "Mandat SEPA", "categorie": "mandat_sepa",
+             "description": "Envoi d'un mandat SEPA",
+             "objet": "Mandat SEPA - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {NOM_FAMILLE},</p>"
+                    "<p>Veuillez trouver en pièce jointe votre mandat "
+                    "SEPA (Référence Unique du Mandat : "
+                    "{REFERENCE_UNIQUE_MANDAT}).</p>"
+                    "<p>Date de signature : {DATE_SIGNATURE}</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: rappel_pieces_manquantes
+            {"nom": "Rappel pièces manquantes",
+             "categorie": "rappel_pieces_manquantes",
+             "description": "Rappel pièces manquantes",
+             "objet": "Pièces manquantes - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {NOM_FAMILLE},</p>"
+                    "<p>Nous vous rappelons que les pièces "
+                    "suivantes sont manquantes pour votre "
+                    "dossier :</p>"
+                    "<p>{LISTE_PIECES_MANQUANTES}</p>"
+                    "<p>Merci de nous les fournir rapidement.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: rappel_vaccinations_manquantes
+            {"nom": "Rappel vaccinations",
+             "categorie": "rappel_vaccinations_manquantes",
+             "description": "Rappel vaccinations manquantes",
+             "objet": "Vaccinations manquantes - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {NOM_COMPLET_INDIVIDU},</p>"
+                    "<p>Nous vous rappelons que les vaccinations "
+                    "suivantes sont manquantes pour votre "
+                    "dossier :</p>"
+                    "<p>{LISTE_VACCINATIONS_MANQUANTES}</p>"
+                    "<p>Merci de mettre à jour votre carnet de santé.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: portail_demande_inscription
+            {"nom": "Demande inscription portail",
+             "categorie": "portail_demande_inscription",
+             "description": "Confirmation demande inscription portail",
+             "objet": "Demande d'inscription reçue - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour,</p>"
+                    "<p>Nous avons bien reçu votre demande "
+                    "d'inscription du {DEMANDE_HORODATAGE}.</p>"
+                    "<p>Description : {DEMANDE_DESCRIPTION}</p>"
+                    "<p>Nous traitons votre demande et vous "
+                    "répondrons avant le {DEMANDE_TRAITEMENT_DATE}.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: portail_demande_reservation
+            {"nom": "Demande réservation portail",
+             "categorie": "portail_demande_reservation",
+             "description": "Confirmation demande réservation portail",
+             "objet": "Demande de réservation reçue - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {INDIVIDU_PRENOM},</p>"
+                    "<p>Nous avons bien reçu votre demande "
+                    "de réservation du {DEMANDE_HORODATAGE}.</p>"
+                    "<p>Réponse : {DEMANDE_REPONSE}</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: portail_demande_renseignement
+            {"nom": "Demande renseignement portail",
+             "categorie": "portail_demande_renseignement",
+             "description": "Confirmation demande renseignement portail",
+             "objet": "Demande de modification reçue - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour,</p>"
+                    "<p>Nous avons bien reçu votre demande "
+                    "de modification du {DEMANDE_HORODATAGE}.</p>"
+                    "<p>Description : {DEMANDE_DESCRIPTION}</p>"
+                    "<p>Nous traitons votre demande et vous "
+                    "répondrons rapidement.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: portail_demande_facture
+            {"nom": "Demande facture portail",
+             "categorie": "portail_demande_facture",
+             "description": "Confirmation demande facture portail",
+             "objet": "Demande de facture reçue - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour,</p>"
+                    "<p>Nous avons bien reçu votre demande "
+                    "de facture du {DEMANDE_HORODATAGE}.</p>"
+                    "<p>Description : {DEMANDE_DESCRIPTION}</p>"
+                    "<p>Nous traitons votre demande et vous "
+                    "enverrons votre facture rapidement.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: portail_demande_recu_reglement
+            {"nom": "Demande reçu règlement portail",
+             "categorie": "portail_demande_recu_reglement",
+             "description": "Confirmation demande reçu règlement portail",
+             "objet": "Demande de reçu reçue - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour,</p>"
+                    "<p>Nous avons bien reçu votre demande "
+                    "de reçu de règlement du {DEMANDE_HORODATAGE}.</p>"
+                    "<p>Description : {DEMANDE_DESCRIPTION}</p>"
+                    "<p>Nous traitons votre demande et vous "
+                    "enverrons votre reçu rapidement.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: portail_demande_location
+            {"nom": "Demande location portail",
+             "categorie": "portail_demande_location",
+             "description": "Confirmation demande location portail",
+             "objet": "Demande de location reçue - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour,</p>"
+                    "<p>Nous avons bien reçu votre demande "
+                    "de location du {DEMANDE_HORODATAGE}.</p>"
+                    "<p>Description : {DEMANDE_DESCRIPTION}</p>"
+                    "<p>Catégories demandées : {CATEGORIES}</p>"
+                    "<p>Produits demandés : {PRODUITS}</p>"
+                    "<p>Nous traitons votre demande et vous "
+                    "répondrons avant le {DEMANDE_TRAITEMENT_DATE}.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: portail_places_disponibles
+            {"nom": "Places disponibles portail",
+             "categorie": "portail_places_disponibles",
+             "description": "Notification places disponibles portail",
+             "objet": "Places disponibles - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {INDIVIDU_PRENOM},</p>"
+                    "<p>Des places sont disponibles pour les "
+                    "activités suivantes :</p>"
+                    "<p>{DETAIL_PLACES}</p>"
+                    "<p>Pour réserver : {URL_PORTAIL}</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: portail_confirmation_reservations
+            {"nom": "Confirmation réservations portail",
+             "categorie": "portail_confirmation_reservations",
+             "description": "Confirmation réservations portail",
+             "objet": "Confirmation réservations - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour {INDIVIDU_PRENOM},</p>"
+                    "<p>Nous vous confirmons vos réservations "
+                    "pour {ACTIVITE_NOM}.</p>"
+                    "<p>Période : {PERIODE_NOM}</p>"
+                    "<p>Modifications : {DETAIL_MODIFICATIONS}</p>"
+                    "<p>Pour consulter : {URL_PORTAIL}</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: portail_notification_message
+            {"nom": "Notification message portail",
+             "categorie": "portail_notification_message",
+             "description": "Notification message portail",
+             "objet": "Nouveau message - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour,</p>"
+                    "<p>Vous avez reçu un nouveau message "
+                    "dans votre espace portail.</p>"
+                    "<p>Pour le consulter : {URL_MESSAGE}</p>"
+                    "<p>Pour vous connecter : {URL_PORTAIL}</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True},
+
+            # Catégorie: commande_repas
+            {"nom": "Commande repas", "categorie": "commande_repas",
+             "description": "Confirmation de commande de repas",
+             "objet": "Commande repas - {ORGANISATEUR_NOM}",
+             "html": "<p>Bonjour,</p>"
+                    "<p>Nous avons bien reçu votre commande de repas "
+                    "{NOM_COMMANDE}.</p>"
+                    "<p>Période : du {DATE_DEBUT} au {DATE_FIN}</p>"
+                    "<p>Merci de vérifier les détails sur le portail.</p>"
+                    "<p>{UTILISATEUR_SIGNATURE}</p>",
+             "defaut": True}
         ]
 
         for modele in modeles_emails:
-            if not ModeleEmail.objects.filter(nom=modele).exists():
-                ModeleEmail.objects.create(nom=modele)
-                print(f"ModeleEmail créé: {modele}")
+            if not ModeleEmail.objects.filter(nom=modele["nom"]).exists():
+                ModeleEmail.objects.create(**modele)
+                defaut_info = " (défaut)" if modele["defaut"] else ""
+                print(f"ModeleEmail créé: {modele['nom']} "
+                      f"[{modele['categorie']}]{defaut_info}")
 
         # Listes de diffusion
         listes_diffusion = [
