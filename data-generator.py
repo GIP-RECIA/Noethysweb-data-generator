@@ -88,6 +88,91 @@ def clean_data_strict():
             pass
 
 
+def create_individu(famille, nom_famille, type_individu, index_famille,
+                    index_individu):
+    """
+    Crée un individu de manière reproductible
+
+    Args:
+        famille: objet Famille auquel rattacher l'individu
+        nom_famille: nom de famille pour l'individu
+        type_individu: 'parent' ou 'enfant'
+        index_famille: index de la famille pour la reproductibilite
+        index_individu: index de l'individu dans la famille pour la
+        reproductibilite
+
+    Returns:
+        tuple: (individu, rattachement)
+    """
+    # Importer les modèles nécessaires
+    from core.models import Individu, Rattachement
+
+    # Seed pour la reproductibilite basée sur la famille et l'index
+    seed_local = 42 + index_famille * 100 + index_individu
+    random.seed(seed_local)
+    Faker.seed(seed_local)
+
+    if type_individu == 'parent':
+        # Civilité pour les parents : 1=Monsieur, 2=Madame, 3=Mademoiselle
+        civilite = (index_individu % 3) + 1
+        if civilite == 1:  # Monsieur
+            prenom = fake.first_name_male()
+        else:  # Madame ou Mademoiselle
+            prenom = fake.first_name_female()
+
+        # Données complètes pour les parents
+        email = fake.email()
+        tel_mobile = fake.phone_number().replace(" ", "").replace(".", "")
+        tel_domicile = fake.phone_number().replace(" ", "").replace(".", "")
+
+        individu = Individu.objects.create(
+            civilite=civilite,
+            nom=nom_famille,
+            prenom=prenom,
+            mail=email,
+            tel_mobile=tel_mobile,
+            tel_domicile=tel_domicile,
+            tel_mobile_sms=True,
+            tel_domicile_sms=True
+        )
+
+        # Rattachement en tant que représentant
+        categorie = 1  # Représentant
+        titulaire = (index_individu == 0)  # Premier parent = titulaire
+
+    else:  # enfant
+        # Civilité pour les enfants : 4=Garçon, 5=Fille
+        civilite = 4 if (index_individu % 2) == 0 else 5
+        if civilite == 4:  # Garçon
+            prenom = fake.first_name_male()
+        else:  # Fille
+            prenom = fake.first_name_female()
+
+        # Données de base pour les enfants
+        date_naiss = fake.date_between(start_date='-15y', end_date='-3y')
+
+        individu = Individu.objects.create(
+            civilite=civilite,
+            nom=nom_famille,
+            prenom=prenom,
+            date_naiss=date_naiss
+        )
+
+        # Rattachement en tant qu'enfant
+        categorie = 2  # Enfant
+        titulaire = False
+
+    # Créer le rattachement
+    rattachement = Rattachement.objects.create(
+        individu=individu,
+        famille=famille,
+        categorie=categorie,
+        titulaire=titulaire
+    )
+
+    return individu, rattachement
+
+
 def generate_data():
     """Génère toutes les données de base par étapes successives"""
     print("=== GÉNÉRATION DES DONNÉES DE BASE ===")
@@ -998,7 +1083,8 @@ def generate_data():
             Activite, CompteBancaire, ModeReglement, Emetteur,
             TypeGroupeActivite, FactureRegie, ResponsableActivite,
             Agrement, Groupe, TypePiece, TypeCotisation, TypeConsentement,
-            Unite, UniteRemplissage, CategorieTarif, NomTarif, Tarif
+            Unite, UniteRemplissage, CategorieTarif, NomTarif, Tarif,
+            Famille
         )
         from datetime import date, timedelta
 
@@ -2552,6 +2638,129 @@ def generate_data():
             if not Emetteur.objects.filter(nom=emetteur["nom"]).exists():
                 Emetteur.objects.create(**emetteur)
                 print(f"Emetteur créé: {emetteur['nom']}")
+
+        # Étape 5 : Familles et représentants
+        print("\n--- ÉTAPE 5 : FAMILLES ET REPRÉSENTANTS ---")
+
+        # Récupérer la première caisse pour les familles
+        caisse_defaut = Caisse.objects.first()
+
+        # Liste pour conserver les noms de famille pour l'étape suivante
+        noms_familles = []
+
+        # Créer 50 familles complètes avec 1-2 parents et 1-3 enfants
+        for i in range(50):
+            # Générer le nom de famille de manière reproductible
+            nom_famille = fake.last_name()
+
+            # Conserver le nom pour l'étape suivante
+            noms_familles.append(nom_famille)
+
+            # Créer la famille avec la méthode Noethys (sans paramètres)
+            famille_obj = Famille.objects.create()
+
+            # Importer les utilitaires nécessaires
+            from fiche_famille.utils import utils_internet
+            from core.utils import utils_texte
+
+            # Création et enregistrement des codes pour le portail
+            internet_identifiant = utils_internet.CreationIdentifiant(
+                IDfamille=famille_obj.pk)
+            internet_mdp, date_expiration_mdp = utils_internet.CreationMDP()
+
+            # Mémorisation des codes internet dans la table familles
+            famille_obj.internet_identifiant = internet_identifiant
+            famille_obj.internet_mdp = internet_mdp
+
+            # Création de l'utilisateur
+            utilisateur = Utilisateur(
+                username=internet_identifiant,
+                categorie="famille",
+                force_reset_password=True,
+                date_expiration_mdp=date_expiration_mdp
+            )
+            utilisateur.save()
+            utilisateur.set_password(internet_mdp)
+            utilisateur.save()
+
+            # Association de l'utilisateur à la famille
+            famille_obj.utilisateur = utilisateur
+
+            # Déterminer le nombre de parents (1-2) et d'enfants (1-3)
+            nb_parents = 1 if (i % 3) == 0 else 2  # 1 parent sur 3, sinon 2
+            nb_enfants = (i % 3) + 1  # 1, 2, ou 3 enfants
+
+            # Créer les parents
+            parents = []
+            for j in range(nb_parents):
+                parent, rattachement = create_individu(
+                    famille=famille_obj,
+                    nom_famille=nom_famille,
+                    type_individu='parent',
+                    index_famille=i,
+                    index_individu=j
+                )
+                parents.append(parent)
+
+                # Le premier parent est l'allocataire et le titulaire Hélios
+                if j == 0:
+                    famille_obj.allocataire = parent
+                    famille_obj.titulaire_helios = parent
+
+            # Remplir les autres champs de la famille avec les infos du premier
+            # parent
+            famille_obj.caisse = caisse_defaut
+            famille_obj.internet_actif = True
+            famille_obj.internet_reservations = True
+            famille_obj.email_factures = True
+            famille_obj.email_factures_adresses = parents[0].mail
+            famille_obj.email_recus = True
+            famille_obj.email_recus_adresses = parents[0].mail
+            famille_obj.mail = parents[0].mail
+            famille_obj.mobile = parents[0].tel_mobile
+
+            # Génération du code comptable selon la méthode Noethys
+            nom_temp = parents[0].nom.upper()
+            nom_sans_accents = utils_texte.Supprimer_accents(nom_temp)
+            if parents[0].prenom:
+                prenom_temp = parents[0].prenom.upper()
+                prenom_sans_accents = utils_texte.Supprimer_accents(
+                    prenom_temp)
+            else:
+                prenom_sans_accents = ""
+            code_compta_format = "%d%s_%s" % (
+                famille_obj.idfamille, nom_sans_accents, prenom_sans_accents)
+            famille_obj.code_compta = code_compta_format[:15]
+
+            # Génération du nom de famille selon la méthode Noethys
+            famille_obj.nom = f"Famille {parents[0].nom}"
+
+            famille_obj.save()
+
+            # Créer les enfants
+            enfants = []
+            for k in range(nb_enfants):
+                enfant, rattachement = create_individu(
+                    famille=famille_obj,
+                    nom_famille=nom_famille,
+                    type_individu='enfant',
+                    index_famille=i,
+                    index_individu=nb_parents + k
+                )
+                enfants.append(enfant)
+
+            # Afficher le résumé de la famille
+            parents_text = ", ".join([f"{p.prenom} {p.nom}" for p in parents])
+            enfants_text = ", ".join([f"{e.prenom} {e.nom}" for e in enfants])
+
+            print(f"Famille {i+1:03d} créée: {nom_famille}")
+            print(f"  Parents ({nb_parents}): {parents_text}")
+            print(f"  Enfants ({nb_enfants}): {enfants_text}")
+
+        print("\nTotal: 50 familles créées avec leur représentant")
+        msg_noms = "Noms conservés pour l'étape suivante: {} noms".format(
+            len(noms_familles))
+        print(msg_noms)
 
         print("\n=== GÉNÉRATION TERMINÉE ===")
 
