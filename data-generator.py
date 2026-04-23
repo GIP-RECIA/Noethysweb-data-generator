@@ -122,6 +122,15 @@ def generate_data():
             structure = Structure.objects.first()
             print(f"Structure existante: {structure.nom}")
 
+        # Associer la structure à l'admin pour qu'elle apparaisse
+        # dans les listes
+        admin_user = Utilisateur.objects.get(username='admin')
+        if structure not in admin_user.structures.all():
+            admin_user.structures.add(structure)
+            admin_user.structure_actuelle = structure
+            admin_user.save()
+            print(f"Structure '{structure.nom}' associée à l'admin")
+
         # Organisateur
         if not Organisateur.objects.exists():
             organisateur = Organisateur.objects.create(
