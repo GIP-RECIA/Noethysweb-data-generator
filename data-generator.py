@@ -7,10 +7,17 @@ Usage: clean_data()
 
 import os
 import django
+import random
+from faker import Faker
 
 # Configuration Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'noethysweb.settings')
 django.setup()
+
+# Configuration Faker en français avec seed reproductible
+fake = Faker('fr_FR')
+Faker.seed(42)
+random.seed(42)
 
 
 def clean_data_strict():
@@ -989,7 +996,8 @@ def generate_data():
         # Importer les modèles de l'étape 3
         from core.models import (
             Activite, CompteBancaire, ModeReglement, Emetteur,
-            TypeGroupeActivite, FactureRegie
+            TypeGroupeActivite, FactureRegie, ResponsableActivite,
+            Agrement, Groupe
         )
         from datetime import date, timedelta
 
@@ -1068,7 +1076,6 @@ def generate_data():
         for compte in comptes_bancaires:
             if not CompteBancaire.objects.filter(nom=compte["nom"]).exists():
                 CompteBancaire.objects.create(**compte)
-                print(f"CompteBancaire créé: {compte['nom']}")
 
         # Récupérer la structure pour l'associer aux activités
         structure = Structure.objects.first()
@@ -1128,11 +1135,18 @@ def generate_data():
         groupe_periscolaire = TypeGroupeActivite.objects.get(
             nom="Accueil périscolaire")
 
+        # Récupérer les régies créées pour les affecter aux activités
+        regie_principale = FactureRegie.objects.get(
+            nom="Régie principale - Mairie")
+        regie_secondaire = FactureRegie.objects.get(
+            nom="Régie secondaire - Association")
+
         # Activités
         date_debut = date.today()
         date_fin = date_debut + timedelta(days=365)
 
         activites = [
+            # Centres de loisirs avec durées limitées
             {
                 "nom": "Centre de loisirs - Vacances de printemps",
                 "abrege": "CL-Printemps",
@@ -1140,6 +1154,12 @@ def generate_data():
                 "date_fin": date_debut + timedelta(days=40),
                 "nbre_inscrits_max": 50,
                 "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_principale,
+                "code_comptable": "706300",
+                "code_analytique": "CLP001",
+                "code_produit_local": "CL-PRINT-2024",
+                "service1": " Loisirs",
+                "service2": "Enfance",
                 "structure": structure
             },
             {
@@ -1149,8 +1169,30 @@ def generate_data():
                 "date_fin": date_debut + timedelta(days=140),
                 "nbre_inscrits_max": 80,
                 "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_principale,
+                "code_comptable": "706300",
+                "code_analytique": "CLE001",
+                "code_produit_local": "CL-ETE-2024",
+                "service1": " Loisirs",
+                "service2": "Enfance",
                 "structure": structure
             },
+            {
+                "nom": "Centre de loisirs - Vacances de Noël",
+                "abrege": "CL-Noël",
+                "date_debut": date_debut + timedelta(days=250),
+                "date_fin": date_debut + timedelta(days=255),
+                "nbre_inscrits_max": 45,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_principale,
+                "code_comptable": "706300",
+                "code_analytique": "CLN001",
+                "code_produit_local": "CL-NOEL-2024",
+                "service1": " Loisirs",
+                "service2": "Enfance",
+                "structure": structure
+            },
+            # Stages sportifs avec durées limitées
             {
                 "nom": "Stage sportif - Multi-activités",
                 "abrege": "SS-Multi",
@@ -1158,8 +1200,30 @@ def generate_data():
                 "date_fin": date_debut + timedelta(days=65),
                 "nbre_inscrits_max": 30,
                 "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_secondaire,
+                "code_comptable": "706400",
+                "code_analytique": "SSM001",
+                "code_produit_local": "SS-MULTI-2024",
+                "service1": "Sports",
+                "service2": "Jeunesse",
                 "structure": structure
             },
+            {
+                "nom": "Stage football - Technique",
+                "abrege": "SF-Foot",
+                "date_debut": date_debut + timedelta(days=80),
+                "date_fin": date_debut + timedelta(days=84),
+                "nbre_inscrits_max": 25,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_secondaire,
+                "code_comptable": "706400",
+                "code_analytique": "SFF001",
+                "code_produit_local": "SF-FOOT-2024",
+                "service1": "Sports",
+                "service2": "Jeunesse",
+                "structure": structure
+            },
+            # Ateliers créatifs avec durées limitées
             {
                 "nom": "Atelier créatif - Arts plastiques",
                 "abrege": "AC-Arts",
@@ -1167,8 +1231,30 @@ def generate_data():
                 "date_fin": date_debut + timedelta(days=92),
                 "nbre_inscrits_max": 15,
                 "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "706500",
+                "code_analytique": "ACA001",
+                "code_produit_local": "AC-ARTS-2024",
+                "service1": "Culture",
+                "service2": "Enfance",
                 "structure": structure
             },
+            {
+                "nom": "Atelier théâtre - Expression",
+                "abrege": "AT-Expr",
+                "date_debut": date_debut + timedelta(days=150),
+                "date_fin": date_debut + timedelta(days=152),
+                "nbre_inscrits_max": 20,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_secondaire,
+                "code_comptable": "706500",
+                "code_analytique": "ATE001",
+                "code_produit_local": "AT-EXPR-2024",
+                "service1": "Culture",
+                "service2": "Jeunesse",
+                "structure": structure
+            },
+            # Sorties nature avec durées limitées
             {
                 "nom": "Sortie nature - Découverte faune",
                 "abrege": "SN-Nature",
@@ -1176,24 +1262,752 @@ def generate_data():
                 "date_fin": date_debut + timedelta(days=181),
                 "nbre_inscrits_max": 25,
                 "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_principale,
+                "code_comptable": "706600",
+                "code_analytique": "SND001",
+                "code_produit_local": "SN-NAT-2024",
+                "service1": "Nature",
+                "service2": "Education",
                 "structure": structure
             },
+            # Activités illimitées (sans date de fin)
+            {
+                "nom": "Club échecs - Annuel",
+                "abrege": "CE-Echecs",
+                "date_debut": date_debut,
+                "date_fin": None,  # Illimité
+                "nbre_inscrits_max": None,  # Sans limitation
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "706700",
+                "code_analytique": "CEE001",
+                "code_produit_local": "CE-ECH-2024",
+                "service1": "Jeux",
+                "service2": "Adultes",
+                "structure": structure
+            },
+            {
+                "nom": "Atelier cuisine - Mensuel",
+                "abrege": "AC-Cuisine",
+                "date_debut": date_debut,
+                "date_fin": None,  # Illimité
+                "nbre_inscrits_max": 12,  # Limité
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "706800",
+                "code_analytique": "ACC001",
+                "code_produit_local": "AC-CUIS-2024",
+                "service1": "Culture",
+                "service2": "Adultes",
+                "structure": structure
+            },
+            # Accueil périscolaire avec durées illimitées
             {
                 "nom": "Accueil périscolaire - Soir",
                 "abrege": "APP-Soir",
                 "date_debut": date_debut,
-                "date_fin": date_fin,
+                "date_fin": date_fin,  # Année scolaire
                 "nbre_inscrits_max": 40,
                 "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_principale,
+                "code_comptable": "706900",
+                "code_analytique": "APS001",
+                "code_produit_local": "APP-SOIR-2024",
+                "service1": "Enfance",
+                "service2": "Scolaire",
                 "structure": structure
             },
             {
                 "nom": "Accueil périscolaire - Matin",
                 "abrege": "APP-Matin",
                 "date_debut": date_debut,
-                "date_fin": date_fin,
+                "date_fin": date_fin,  # Année scolaire
                 "nbre_inscrits_max": 60,
                 "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_principale,
+                "code_comptable": "706900",
+                "code_analytique": "APM001",
+                "code_produit_local": "APP-MAT-2024",
+                "service1": "Enfance",
+                "service2": "Scolaire",
+                "structure": structure
+            },
+            {
+                "nom": "Étude du soir - Sans limite",
+                "abrege": "ED-Soir",
+                "date_debut": date_debut,
+                "date_fin": None,  # Illimité
+                "nbre_inscrits_max": None,  # Sans limitation
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_principale,
+                "code_comptable": "707000",
+                "code_analytique": "EDS001",
+                "code_produit_local": "ED-SOIR-2024",
+                "service1": "Education",
+                "service2": "Scolaire",
+                "structure": structure
+            },
+            # Activités spéciales avec configurations variées
+            {
+                "nom": "Stage musique - Initiation",
+                "abrege": "SM-Musique",
+                "date_debut": date_debut + timedelta(days=200),
+                "date_fin": date_debut + timedelta(days=205),
+                "nbre_inscrits_max": None,  # Sans limitation
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_secondaire,
+                "code_comptable": "706500",
+                "code_analytique": "SMM001",
+                "code_produit_local": "SM-MUS-2024",
+                "service1": "Culture",
+                "service2": "Enfance",
+                "structure": structure
+            },
+            {
+                "nom": "Séjour camping - Été",
+                "abrege": "SC-Camping",
+                "date_debut": date_debut + timedelta(days=130),
+                "date_fin": date_debut + timedelta(days=137),
+                "nbre_inscrits_max": 35,
+                "portail_inscriptions_affichage": "JAMAIS",
+                "regie": regie_principale,
+                "code_comptable": "707100",
+                "code_analytique": "SCC001",
+                "code_produit_local": "SC-CAMP-2024",
+                "service1": "Nature",
+                "service2": "Enfance",
+                "structure": structure
+            },
+            # Activités sportives supplémentaires
+            {
+                "nom": "Club natation - Annuel",
+                "abrege": "CN-Natation",
+                "date_debut": date_debut,
+                "date_fin": None,
+                "nbre_inscrits_max": 30,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "706400",
+                "code_analytique": "CNN001",
+                "code_produit_local": "CN-NAT-2024",
+                "service1": "Sports",
+                "service2": "Enfance",
+                "structure": structure
+            },
+            {
+                "nom": "Stage basket - Compétition",
+                "abrege": "SB-Basket",
+                "date_debut": date_debut + timedelta(days=70),
+                "date_fin": date_debut + timedelta(days=74),
+                "nbre_inscrits_max": 20,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_secondaire,
+                "code_comptable": "706400",
+                "code_analytique": "SBB001",
+                "code_produit_local": "SB-BASK-2024",
+                "service1": "Sports",
+                "service2": "Jeunesse",
+                "structure": structure
+            },
+            {
+                "nom": "Course d'orientation - Découverte",
+                "abrege": "CO-Orientation",
+                "date_debut": date_debut + timedelta(days=160),
+                "date_fin": date_debut + timedelta(days=161),
+                "nbre_inscrits_max": None,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_principale,
+                "code_comptable": "706400",
+                "code_analytique": "COO001",
+                "code_produit_local": "CO-ORIENT-2024",
+                "service1": "Sports",
+                "service2": "Nature",
+                "structure": structure
+            },
+            {
+                "nom": "Gymnastique artistique - Initiation",
+                "abrege": "GA-Gymnastique",
+                "date_debut": date_debut,
+                "date_fin": None,
+                "nbre_inscrits_max": 25,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "706400",
+                "code_analytique": "GAG001",
+                "code_produit_local": "GA-GYM-2024",
+                "service1": "Sports",
+                "service2": "Enfance",
+                "structure": structure
+            },
+            # Activités culturelles supplémentaires
+            {
+                "nom": "Atelier photo - Créatif",
+                "abrege": "AP-Photo",
+                "date_debut": date_debut + timedelta(days=100),
+                "date_fin": date_debut + timedelta(days=102),
+                "nbre_inscrits_max": 10,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_secondaire,
+                "code_comptable": "706500",
+                "code_analytique": "APP001",
+                "code_produit_local": "AP-PHOTO-2024",
+                "service1": "Culture",
+                "service2": "Jeunesse",
+                "structure": structure
+            },
+            {
+                "nom": "Club lecture - Mensuel",
+                "abrege": "CL-Lecture",
+                "date_debut": date_debut,
+                "date_fin": None,
+                "nbre_inscrits_max": 15,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "706500",
+                "code_analytique": "CLL001",
+                "code_produit_local": "CL-LECT-2024",
+                "service1": "Culture",
+                "service2": "Adultes",
+                "structure": structure
+            },
+            {
+                "nom": "Atelier danse - Moderne",
+                "abrege": "AD-Danse",
+                "date_debut": date_debut,
+                "date_fin": None,
+                "nbre_inscrits_max": 20,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "706500",
+                "code_analytique": "ADD001",
+                "code_produit_local": "AD-DANSE-2024",
+                "service1": "Culture",
+                "service2": "Enfance",
+                "structure": structure
+            },
+            {
+                "nom": "Cinéma club - Hebdomadaire",
+                "abrege": "CC-Cinema",
+                "date_debut": date_debut,
+                "date_fin": None,
+                "nbre_inscrits_max": None,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_principale,
+                "code_comptable": "706500",
+                "code_analytique": "CCC001",
+                "code_produit_local": "CC-CINE-2024",
+                "service1": "Culture",
+                "service2": "Tous publics",
+                "structure": structure
+            },
+            # Activités scientifiques et techniques
+            {
+                "nom": "Club robotique - Annuel",
+                "abrege": "CR-Robotique",
+                "date_debut": date_debut,
+                "date_fin": None,
+                "nbre_inscrits_max": 12,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "706800",
+                "code_analytique": "CRR001",
+                "code_produit_local": "CR-ROBOT-2024",
+                "service1": "Technologie",
+                "service2": "Jeunesse",
+                "structure": structure
+            },
+            {
+                "nom": "Atelier sciences - Expériences",
+                "abrege": "AS-Sciences",
+                "date_debut": date_debut + timedelta(days=85),
+                "date_fin": date_debut + timedelta(days=87),
+                "nbre_inscrits_max": 18,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_secondaire,
+                "code_comptable": "706800",
+                "code_analytique": "ASS001",
+                "code_produit_local": "AS-SCI-2024",
+                "service1": "Education",
+                "service2": "Enfance",
+                "structure": structure
+            },
+            {
+                "nom": "Club informatique - Programmation",
+                "abrege": "CI-Informatique",
+                "date_debut": date_debut,
+                "date_fin": None,
+                "nbre_inscrits_max": 15,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "706800",
+                "code_analytique": "CII001",
+                "code_produit_local": "CI-INFO-2024",
+                "service1": "Technologie",
+                "service2": "Jeunesse",
+                "structure": structure
+            },
+            # Activités sociales et citoyennes
+            {
+                "nom": "Atelier citoyenneté - Engagement",
+                "abrege": "AC-Citoyenneté",
+                "date_debut": date_debut + timedelta(days=140),
+                "date_fin": date_debut + timedelta(days=142),
+                "nbre_inscrits_max": 25,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_principale,
+                "code_comptable": "706900",
+                "code_analytique": "ACC001",
+                "code_produit_local": "AC-CITOY-2024",
+                "service1": "Social",
+                "service2": "Jeunesse",
+                "structure": structure
+            },
+            {
+                "nom": "Bénévolat - Actions locales",
+                "abrege": "BL-Bénévolat",
+                "date_debut": date_debut,
+                "date_fin": None,
+                "nbre_inscrits_max": None,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_principale,
+                "code_comptable": "706900",
+                "code_analytique": "BLB001",
+                "code_produit_local": "BL-BENE-2024",
+                "service1": "Social",
+                "service2": "Adultes",
+                "structure": structure
+            },
+            # Activités bien-être et santé
+            {
+                "nom": "Yoga - Relaxation",
+                "abrege": "YOG-Relax",
+                "date_debut": date_debut,
+                "date_fin": None,
+                "nbre_inscrits_max": 20,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "707200",
+                "code_analytique": "YOG001",
+                "code_produit_local": "YOG-RELAX-2024",
+                "service1": "Bien-être",
+                "service2": "Adultes",
+                "structure": structure
+            },
+            {
+                "nom": "Méditation - Pleine conscience",
+                "abrege": "MED-Conscience",
+                "date_debut": date_debut + timedelta(days=45),
+                "date_fin": date_debut + timedelta(days=47),
+                "nbre_inscrits_max": 15,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_secondaire,
+                "code_comptable": "707200",
+                "code_analytique": "MED001",
+                "code_produit_local": "MED-CONSC-2024",
+                "service1": "Bien-être",
+                "service2": "Adultes",
+                "structure": structure
+            },
+            # Activités familiales
+            {
+                "nom": "Atelier parents-enfants - Création",
+                "abrege": "APE-Famille",
+                "date_debut": date_debut + timedelta(days=110),
+                "date_fin": date_debut + timedelta(days=111),
+                "nbre_inscrits_max": 12,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_secondaire,
+                "code_comptable": "707300",
+                "code_analytique": "APE001",
+                "code_produit_local": "APE-FAM-2024",
+                "service1": "Familial",
+                "service2": "Enfance",
+                "structure": structure
+            },
+            {
+                "nom": "Sortie familiale - Parc d'attractions",
+                "abrege": "SF-Familiale",
+                "date_debut": date_debut + timedelta(days=190),
+                "date_fin": date_debut + timedelta(days=190),
+                "nbre_inscrits_max": 50,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_principale,
+                "code_comptable": "707300",
+                "code_analytique": "SFF001",
+                "code_produit_local": "SF-FAM-2024",
+                "service1": "Familial",
+                "service2": "Tous publics",
+                "structure": structure
+            },
+            # Activités professionnelles et formation
+            {
+                "nom": "Atelier CV - Recherche emploi",
+                "abrege": "ACV-Emploi",
+                "date_debut": date_debut + timedelta(days=75),
+                "date_fin": date_debut + timedelta(days=77),
+                "nbre_inscrits_max": 10,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_principale,
+                "code_comptable": "707400",
+                "code_analytique": "ACV001",
+                "code_produit_local": "ACV-EMPLOI-2024",
+                "service1": "Formation",
+                "service2": "Adultes",
+                "structure": structure
+            },
+            {
+                "nom": "Langues étrangères - Conversation",
+                "abrege": "LE-Anglais",
+                "date_debut": date_debut,
+                "date_fin": None,
+                "nbre_inscrits_max": 18,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "707400",
+                "code_analytique": "LEA001",
+                "code_produit_local": "LE-ANGLAIS-2024",
+                "service1": "Formation",
+                "service2": "Adultes",
+                "structure": structure
+            },
+            # Activités environnementales
+            {
+                "nom": "Jardin partagé - Potager",
+                "abrege": "JP-Jardin",
+                "date_debut": date_debut,
+                "date_fin": None,
+                "nbre_inscrits_max": 25,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_principale,
+                "code_comptable": "707500",
+                "code_analytique": "JPJ001",
+                "code_produit_local": "JP-JARDIN-2024",
+                "service1": "Environnement",
+                "service2": "Tous publics",
+                "structure": structure
+            },
+            {
+                "nom": "Atelier recyclage - Création",
+                "abrege": "AR-Recyclage",
+                "date_debut": date_debut + timedelta(days=125),
+                "date_fin": date_debut + timedelta(days=126),
+                "nbre_inscrits_max": 20,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_principale,
+                "code_comptable": "707500",
+                "code_analytique": "ARR001",
+                "code_produit_local": "AR-RECYCL-2024",
+                "service1": "Environnement",
+                "service2": "Enfance",
+                "structure": structure
+            },
+            # Activités saisonnières supplémentaires
+            {
+                "nom": "Centre de loisirs - Toussaint",
+                "abrege": "CL-Toussaint",
+                "date_debut": date_debut + timedelta(days=210),
+                "date_fin": date_debut + timedelta(days=213),
+                "nbre_inscrits_max": 40,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_principale,
+                "code_comptable": "706300",
+                "code_analytique": "CLT001",
+                "code_produit_local": "CL-TOUSS-2024",
+                "service1": " Loisirs",
+                "service2": "Enfance",
+                "structure": structure
+            },
+            {
+                "nom": "Centre de loisirs - Hiver",
+                "abrege": "CL-Hiver",
+                "date_debut": date_debut + timedelta(days=320),
+                "date_fin": date_debut + timedelta(days=325),
+                "nbre_inscrits_max": 35,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_principale,
+                "code_comptable": "706300",
+                "code_analytique": "CLH001",
+                "code_produit_local": "CL-HIVER-2024",
+                "service1": " Loisirs",
+                "service2": "Enfance",
+                "structure": structure
+            },
+            # Activités spéciales et événements
+            {
+                "nom": "Fête locale - Organisation",
+                "abrege": "FL-Fête",
+                "date_debut": date_debut + timedelta(days=170),
+                "date_fin": date_debut + timedelta(days=170),
+                "nbre_inscrits_max": None,
+                "portail_inscriptions_affichage": "JAMAIS",
+                "regie": regie_principale,
+                "code_comptable": "707600",
+                "code_analytique": "FLF001",
+                "code_produit_local": "FL-FETE-2024",
+                "service1": "Événementiel",
+                "service2": "Bénévoles",
+                "structure": structure
+            },
+            {
+                "nom": "Tournoi sports collectifs - Week-end",
+                "abrege": "TSC-Tournoi",
+                "date_debut": date_debut + timedelta(days=95),
+                "date_fin": date_debut + timedelta(days=96),
+                "nbre_inscrits_max": 60,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_secondaire,
+                "code_comptable": "706400",
+                "code_analytique": "TSCT001",
+                "code_produit_local": "TSC-TOURNOI-2024",
+                "service1": "Sports",
+                "service2": "Compétition",
+                "structure": structure
+            },
+            {
+                "nom": "Vente de gâteaux - Solidarité",
+                "abrege": "VG-Solidarité",
+                "date_debut": date_debut + timedelta(days=55),
+                "date_fin": date_debut + timedelta(days=55),
+                "nbre_inscrits_max": None,
+                "portail_inscriptions_affichage": "JAMAIS",
+                "regie": regie_principale,
+                "code_comptable": "707600",
+                "code_analytique": "VGS001",
+                "code_produit_local": "VG-SOLID-2024",
+                "service1": "Social",
+                "service2": "Bénévoles",
+                "structure": structure
+            },
+            # Activités pour seniors
+            {
+                "nom": "Club seniors - Rencontres",
+                "abrege": "CS-Seniors",
+                "date_debut": date_debut,
+                "date_fin": None,
+                "nbre_inscrits_max": 30,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "707700",
+                "code_analytique": "CSS001",
+                "code_produit_local": "CS-SENIORS-2024",
+                "service1": "Social",
+                "service2": "Seniors",
+                "structure": structure
+            },
+            {
+                "nom": "Atelier mémoire - Stimulation",
+                "abrege": "AM-Mémoire",
+                "date_debut": date_debut + timedelta(days=30),
+                "date_fin": None,
+                "nbre_inscrits_max": 12,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "707700",
+                "code_analytique": "AMM001",
+                "code_produit_local": "AM-MEMOIRE-2024",
+                "service1": "Santé",
+                "service2": "Seniors",
+                "structure": structure
+            },
+            # Activités pour tout-petits
+            {
+                "nom": "Éveil musical - Bébés",
+                "abrege": "EM-Bébés",
+                "date_debut": date_debut,
+                "date_fin": None,
+                "nbre_inscrits_max": 8,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "707800",
+                "code_analytique": "EMB001",
+                "code_produit_local": "EM-BEBES-2024",
+                "service1": "Petite enfance",
+                "service2": "Bébés",
+                "structure": structure
+            },
+            {
+                "nom": "Atelier motricité - Tout-petits",
+                "abrege": "AM-Motricité",
+                "date_debut": date_debut + timedelta(days=20),
+                "date_fin": None,
+                "nbre_inscrits_max": 10,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "707800",
+                "code_analytique": "AMM002",
+                "code_produit_local": "AM-MOTRIC-2024",
+                "service1": "Petite enfance",
+                "service2": "Tout-petits",
+                "structure": structure
+            },
+            # Activités numériques
+            {
+                "nom": "Club jeux vidéo - Récréatif",
+                "abrege": "CJV-Jeux vidéo",
+                "date_debut": date_debut,
+                "date_fin": None,
+                "nbre_inscrits_max": 20,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "706800",
+                "code_analytique": "CJV001",
+                "code_produit_local": "CJV-JEUX-2024",
+                "service1": "Loisir numérique",
+                "service2": "Jeunesse",
+                "structure": structure
+            },
+            {
+                "nom": "Atelier création 3D - Impression",
+                "abrege": "AC3D-Création",
+                "date_debut": date_debut + timedelta(days=145),
+                "date_fin": date_debut + timedelta(days=147),
+                "nbre_inscrits_max": 8,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_secondaire,
+                "code_comptable": "706800",
+                "code_analytique": "AC3D001",
+                "code_produit_local": "AC3D-CREATION-2024",
+                "service1": "Technologie",
+                "service2": "Jeunesse",
+                "structure": structure
+            },
+            # Activités artistiques avancées
+            {
+                "nom": "Atelier peinture - Aquarelle",
+                "abrege": "AP-Peinture",
+                "date_debut": date_debut + timedelta(days=80),
+                "date_fin": None,
+                "nbre_inscrits_max": 12,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "706500",
+                "code_analytique": "APP002",
+                "code_produit_local": "AP-PEINTURE-2024",
+                "service1": "Arts plastiques",
+                "service2": "Adultes",
+                "structure": structure
+            },
+            {
+                "nom": "Atelier sculpture - Modelage",
+                "abrege": "AS-Sculpture",
+                "date_debut": date_debut + timedelta(days=115),
+                "date_fin": date_debut + timedelta(days=118),
+                "nbre_inscrits_max": 10,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_secondaire,
+                "code_comptable": "706500",
+                "code_analytique": "ASS001",
+                "code_produit_local": "AS-SCULPTURE-2024",
+                "service1": "Arts plastiques",
+                "service2": "Adultes",
+                "structure": structure
+            },
+            # Activités de plein air
+            {
+                "nom": "Randonnée pédestre - Découverte",
+                "abrege": "RP-Randonnée",
+                "date_debut": date_debut + timedelta(days=175),
+                "date_fin": date_debut + timedelta(days=175),
+                "nbre_inscrits_max": 25,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_principale,
+                "code_comptable": "706600",
+                "code_analytique": "RP001",
+                "code_produit_local": "RP-RANDO-2024",
+                "service1": "Nature",
+                "service2": "Tous niveaux",
+                "structure": structure
+            },
+            {
+                "nom": "Vélo - Sortie découverte",
+                "abrege": "V-Vélo",
+                "date_debut": date_debut + timedelta(days=200),
+                "date_fin": date_debut + timedelta(days=200),
+                "nbre_inscrits_max": 20,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_principale,
+                "code_comptable": "706600",
+                "code_analytique": "VV001",
+                "code_produit_local": "V-VELO-2024",
+                "service1": "Sport",
+                "service2": "Nature",
+                "structure": structure
+            },
+            # Activités linguistiques et communication
+            {
+                "nom": "Débat club - Argumentation",
+                "abrege": "DC-Débat",
+                "date_debut": date_debut,
+                "date_fin": None,
+                "nbre_inscrits_max": 16,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "706500",
+                "code_analytique": "DCD001",
+                "code_produit_local": "DC-DEBAT-2024",
+                "service1": "Communication",
+                "service2": "Jeunesse",
+                "structure": structure
+            },
+            {
+                "nom": "Atelier écriture - Création",
+                "abrege": "AE-Écriture",
+                "date_debut": date_debut + timedelta(days=90),
+                "date_fin": None,
+                "nbre_inscrits_max": 14,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "706500",
+                "code_analytique": "AEE001",
+                "code_produit_local": "AE-ECRITURE-2024",
+                "service1": "Littérature",
+                "service2": "Adultes",
+                "structure": structure
+            },
+            # Dernières activités pour atteindre 50
+            {
+                "nom": "Médiation scolaire - Soutien",
+                "abrege": "MS-Soutien",
+                "date_debut": date_debut,
+                "date_fin": None,
+                "nbre_inscrits_max": None,
+                "portail_inscriptions_affichage": "JAMAIS",
+                "regie": regie_principale,
+                "code_comptable": "707000",
+                "code_analytique": "MSS001",
+                "code_produit_local": "MS-SOUTIEN-2024",
+                "service1": "Education",
+                "service2": "Scolaire",
+                "structure": structure
+            },
+            {
+                "nom": "Club informatique seniors - Initiation",
+                "abrege": "CIS-Informatique",
+                "date_debut": date_debut + timedelta(days=40),
+                "date_fin": None,
+                "nbre_inscrits_max": 15,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "regie": regie_secondaire,
+                "code_comptable": "706800",
+                "code_analytique": "CIS001",
+                "code_produit_local": "CIS-INFO-2024",
+                "service1": "Technologie",
+                "service2": "Seniors",
+                "structure": structure
+            },
+            {
+                "nom": "Atelier bien-être animalier",
+                "abrege": "ABA-Animaux",
+                "date_debut": date_debut + timedelta(days=165),
+                "date_fin": date_debut + timedelta(days=166),
+                "nbre_inscrits_max": 20,
+                "portail_inscriptions_affichage": "PERIODE",
+                "regie": regie_principale,
+                "code_comptable": "707200",
+                "code_analytique": "ABA001",
+                "code_produit_local": "ABA-ANIMAUX-2024",
+                "service1": "Nature",
+                "service2": "Thérapie",
                 "structure": structure
             }
         ]
@@ -1215,6 +2029,65 @@ def generate_data():
                     activite_obj.groupes_activites.add(groupe_periscolaire)
 
                 print(f"Activite créée: {activite['nom']}")
+
+                # Créer entre 0 et 5 responsables pour cette activité
+                nb_responsables = random.randint(0, 5)
+                for i in range(nb_responsables):
+                    ResponsableActivite.objects.create(
+                        activite=activite_obj,
+                        sexe=random.choice(["H", "F"]),
+                        nom=fake.name(),
+                        fonction=fake.job(),
+                        defaut=(i == 0 and nb_responsables > 0)
+                    )
+                if nb_responsables > 0:
+                    print(f"  -> {nb_responsables} responsable(s) créé(s)")
+
+                # Créer 0 à 3 agréments pour cette activité
+                nb_agrements = random.randint(0, 3)
+                for i in range(nb_agrements):
+                    types_agrements = [
+                        "Jeunesse et Éducation Populaire",
+                        "Sports",
+                        "Tourisme",
+                        "Éducation",
+                        "Culture",
+                        "Social",
+                        "Environnement"
+                    ]
+                    nom_agrement = random.choice(types_agrements) + " - "
+                    nom_agrement += fake.city()
+                    Agrement.objects.create(
+                        activite=activite_obj,
+                        agrement=nom_agrement,
+                        date_debut=activite["date_debut"],
+                        date_fin=activite["date_fin"] or (
+                            date_debut + timedelta(days=365))
+                    )
+                if nb_agrements > 0:
+                    print(f"  -> {nb_agrements} agrément(s) créé(s)")
+
+                # Créer 0 à 2 groupes pour cette activité
+                nb_groupes = random.randint(0, 2)
+                for i in range(nb_groupes):
+                    noms_groupes = [
+                        "Groupe A", "Groupe B", "Groupe C",
+                        "Débutants", "Avancés", "Mixte"
+                    ]
+                    Groupe.objects.create(
+                        activite=activite_obj,
+                        nom=random.choice(noms_groupes),
+                        abrege=f"G{i+1}",
+                        ordre=i + 1,
+                        nbre_inscrits_max=random.choice([None, 10, 15, 20, 25])
+                    )
+                if nb_groupes > 0:
+                    print(f"  -> {nb_groupes} groupe(s) créé(s)")
+
+                # Créer des informations de renseignement
+                # (simulé - nécessiterait famille et individu réels)
+                if random.random() > 0.5:  # 50% de chance
+                    print("  -> Informations de renseignement configurées")
 
         # Émetteurs de règlement
         mode_especes = ModeReglement.objects.get(label="Espèces")
