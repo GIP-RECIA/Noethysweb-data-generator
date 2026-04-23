@@ -997,7 +997,8 @@ def generate_data():
         from core.models import (
             Activite, CompteBancaire, ModeReglement, Emetteur,
             TypeGroupeActivite, FactureRegie, ResponsableActivite,
-            Agrement, Groupe
+            Agrement, Groupe, TypePiece, TypeCotisation, TypeConsentement,
+            Unite, UniteRemplissage, CategorieTarif, NomTarif, Tarif
         )
         from datetime import date, timedelta
 
@@ -1076,6 +1077,86 @@ def generate_data():
         for compte in comptes_bancaires:
             if not CompteBancaire.objects.filter(nom=compte["nom"]).exists():
                 CompteBancaire.objects.create(**compte)
+
+        # Créer les types de pièces nécessaires
+        types_pieces = []
+
+        # Pièces individuelles
+        types_pieces.append({
+            "nom": "Carte d'identité",
+            "public": "individu",
+            "duree_validite": "j0-m0-a10"
+        })
+        types_pieces.append({
+            "nom": "Passport",
+            "public": "individu",
+            "duree_validite": "j0-m0-a10"
+        })
+        types_pieces.append({
+            "nom": "Certificat médical",
+            "public": "individu",
+            "duree_validite": "j0-m0-a1"
+        })
+        types_pieces.append({
+            "nom": "Carnet de vaccination",
+            "public": "individu",
+            "duree_validite": None
+        })
+
+        # Pièces familiales
+        types_pieces.append({
+            "nom": "Attestation d'assurance",
+            "public": "famille",
+            "duree_validite": "d2026-12-31"
+        })
+        types_pieces.append({
+            "nom": "Autorisation parentale",
+            "public": "famille",
+            "duree_validite": "j0-m6-a0"
+        })
+        types_pieces.append({
+            "nom": "Justificatif de domicile",
+            "public": "famille",
+            "duree_validite": "j0-m3-a0"
+        })
+
+        for type_piece in types_pieces:
+            if not TypePiece.objects.filter(nom=type_piece["nom"]).exists():
+                TypePiece.objects.create(**type_piece)
+                print(f"TypePiece créé: {type_piece['nom']}")
+
+        # Créer les types de cotisations nécessaires
+        types_cotisations = [
+            {"nom": "Adhésion annuelle", "type": "famille"},
+            {"nom": "Adhésion individuelle", "type": "individu"},
+            {"nom": "Cotisation sportive", "type": "famille"},
+            {"nom": "Cotisation culturelle",
+             "type": "individu"}
+        ]
+
+        for type_cotisation in types_cotisations:
+            if not TypeCotisation.objects.filter(
+                    nom=type_cotisation["nom"]).exists():
+                TypeCotisation.objects.create(**type_cotisation)
+                print(f"TypeCotisation créé: {type_cotisation['nom']}")
+
+        # Créer les types de consentements nécessaires
+        types_consentements = [
+            {"nom": "Règlement intérieur"},
+            {"nom": "Droit à l'image"},
+            {"nom": "Autorisation de sortie"},
+            {"nom": "Conditions générales"},
+            {"nom": "Politique de confidentialité"}
+        ]
+
+        for type_consentement in types_consentements:
+            if not TypeConsentement.objects.filter(
+                    nom=type_consentement["nom"]).exists():
+                TypeConsentement.objects.create(
+                    nom=type_consentement["nom"],
+                    structure=structure
+                )
+                print(f"TypeConsentement créé: {type_consentement['nom']}")
 
         # Récupérer la structure pour l'associer aux activités
         structure = Structure.objects.first()
@@ -2084,10 +2165,375 @@ def generate_data():
                 if nb_groupes > 0:
                     print(f"  -> {nb_groupes} groupe(s) créé(s)")
 
-                # Créer des informations de renseignement
-                # (simulé - nécessiterait famille et individu réels)
-                if random.random() > 0.5:  # 50% de chance
-                    print("  -> Informations de renseignement configurées")
+                # Configurer les renseignements (vaccins et assurance)
+                # pour environ 2/3 des activités de manière reproductible
+                activite_index = activites.index(activite)
+                if activite_index % 3 != 0:  # 2/3 des activités
+                    # Configuration reproductible basée sur l'index
+                    vaccins_obligatoires = (activite_index % 2 == 0)
+                    assurance_obligatoire = (activite_index % 3 == 1)
+
+                    activite_obj.vaccins_obligatoires = vaccins_obligatoires
+                    activite_obj.assurance_obligatoire = assurance_obligatoire
+                    activite_obj.save()
+
+                    details = []
+                    if vaccins_obligatoires:
+                        details.append("vaccins obligatoires")
+                    if assurance_obligatoire:
+                        details.append("assurance obligatoire")
+
+                    print(f"  -> Renseignements: {', '.join(details)}")
+
+                # Configurer pièces, cotisations et consentements
+                # pour certaines activités de manière reproductible
+                if activite_index % 4 != 0:  # 3/4 des activités
+                    # Pièces à fournir selon le type d'activité
+                    pieces_a_ajouter = []
+                    if ("sport" in activite["nom"].lower() or
+                            "stage" in activite["nom"].lower()):
+                        pieces_a_ajouter = [
+                            "Certificat médical",
+                            "Attestation d'assurance"
+                        ]
+                    elif ("centre de loisirs" in activite["nom"].lower() or
+                          "sortie" in activite["nom"].lower()):
+                        pieces_a_ajouter = [
+                            "Carte d'identité",
+                            "Autorisation parentale"
+                        ]
+                    elif "atelier" in activite["nom"].lower():
+                        pieces_a_ajouter = ["Carte d'identité"]
+
+                    # Ajouter les pièces
+                    for piece_nom in pieces_a_ajouter:
+                        piece = TypePiece.objects.get(nom=piece_nom)
+                        activite_obj.pieces.add(piece)
+
+                    # Cotisations à jour selon le type d'activité
+                    cotisations_a_ajouter = []
+                    if activite_index % 3 == 0:
+                        cotisations_a_ajouter = ["Adhésion annuelle"]
+                    elif "sport" in activite["nom"].lower():
+                        cotisations_a_ajouter = ["Cotisation sportive"]
+                    elif ("culture" in activite["nom"].lower() or
+                          "atelier" in activite["nom"].lower()):
+                        cotisations_a_ajouter = ["Cotisation culturelle"]
+
+                    # Ajouter les cotisations
+                    for cotisation_nom in cotisations_a_ajouter:
+                        cotisation = TypeCotisation.objects.get(
+                            nom=cotisation_nom)
+                        activite_obj.cotisations.add(cotisation)
+
+                    # Consentements internet nécessaires
+                    consentements_a_ajouter = []
+                    if activite_index % 2 == 0:
+                        consentements_a_ajouter = ["Règlement intérieur"]
+                    if "sortie" in activite["nom"].lower():
+                        consentements_a_ajouter.append(
+                            "Autorisation de sortie")
+                    if activite_index % 5 == 0:
+                        consentements_a_ajouter.append("Droit à l'image")
+
+                    # Ajouter les consentements
+                    for consentement_nom in consentements_a_ajouter:
+                        consentement = TypeConsentement.objects.get(
+                            nom=consentement_nom)
+                        activite_obj.types_consentements.add(
+                            consentement)
+
+                    # Afficher les configurations
+                    configurations = []
+                    if pieces_a_ajouter:
+                        configurations.append(
+                            f"{len(pieces_a_ajouter)} pièce(s)")
+                    if cotisations_a_ajouter:
+                        configurations.append(
+                            f"{len(cotisations_a_ajouter)} cotisation(s)")
+                    if consentements_a_ajouter:
+                        configurations.append(
+                            f"{len(consentements_a_ajouter)} consentement(s)")
+
+                    if configurations:
+                        config_str = ', '.join(configurations)
+                        print(f"  -> Configuration: {config_str}")
+
+                # Créer 1 à 3 unités de consommation pour cette activité
+                nb_unites = random.randint(1, 3)
+                for i in range(nb_unites):
+                    # Types d'unités selon le type d'activité
+                    types_unites = [
+                        "Unitaire", "Horaire", "Quantite", "Evenement"
+                    ]
+                    if ("stage" in activite["nom"].lower() or
+                            "centre de loisirs" in activite["nom"].lower()):
+                        type_unite = random.choice(["Unitaire", "Quantite"])
+                    elif "sport" in activite["nom"].lower():
+                        type_unite = random.choice(["Horaire", "Evenement"])
+                    else:
+                        type_unite = random.choice(types_unites)
+
+                    # Heures selon le type
+                    heure_debut = None
+                    heure_fin = None
+                    if type_unite == "Horaire":
+                        heures_possibles = [
+                            ("08:00", "12:00"),
+                            ("14:00", "18:00"),
+                            ("09:00", "17:00"),
+                            ("10:00", "16:00")
+                        ]
+                        heure_debut, heure_fin = random.choice(
+                            heures_possibles)
+
+                    # Nom et abrégé selon le type
+                    if type_unite == "Unitaire":
+                        nom = f"Séance {i+1}"
+                        abrege = f"S{i+1}"
+                    elif type_unite == "Horaire":
+                        nom = f"Créneau {i+1}"
+                        abrege = f"C{i+1}"
+                    elif type_unite == "Quantite":
+                        nom = f"Unité {i+1}"
+                        abrege = f"U{i+1}"
+                    else:  # Evenement
+                        nom = f"Événement {i+1}"
+                        abrege = f"E{i+1}"
+
+                    # Créer l'unité
+                    Unite.objects.create(
+                        activite=activite_obj,
+                        ordre=i + 1,
+                        nom=nom,
+                        abrege=abrege,
+                        type=type_unite,
+                        heure_debut=heure_debut,
+                        heure_fin=heure_fin,
+                        heure_debut_fixe=(type_unite == "Horaire"),
+                        heure_fin_fixe=(type_unite == "Horaire"),
+                        repas=random.choice([True, False]),
+                        date_debut=activite["date_debut"],
+                        date_fin=activite["date_fin"],
+                        largeur=random.choice([40, 50, 60, 80]),
+                        visible_portail=True,
+                        imposer_saisie_valeur=False,
+                        coeff=str(random.uniform(0.5, 2.0))[:4]
+                    )
+
+                if nb_unites > 0:
+                    msg = f"  -> {nb_unites} unité(s) de consommation créée(s)"
+                    print(msg)
+
+                # Créer 1 à 2 unités de remplissage
+                nb_unites_remplissage = random.randint(1, 2)
+                unites_disponibles = Unite.objects.filter(
+                        activite=activite_obj)
+
+                for i in range(nb_unites_remplissage):
+                    # Nom et abrégé selon le type d'activité
+                    if ("stage" in activite["nom"].lower() or
+                            "centre de loisirs" in activite["nom"].lower()):
+                        noms_possibles = [
+                            "Journée", "Matinée", "Après-midi", "Semaine"
+                        ]
+                        abrege_possibles = ["J", "M", "AM", "S"]
+                    elif "sport" in activite["nom"].lower():
+                        noms_possibles = [
+                            "Match", "Entraînement", "Compétition"
+                        ]
+                        abrege_possibles = ["MA", "EN", "CO"]
+                    else:
+                        noms_possibles = ["Séance", "Atelier", "Module"]
+                        abrege_possibles = ["SE", "AT", "MO"]
+
+                    index_nom = i % len(noms_possibles)
+                    nom_temp = noms_possibles[index_nom]
+                    abrege_temp = abrege_possibles[index_nom]
+                    nom = "{} {}".format(nom_temp, i+1)
+                    abrege = "{}{}".format(abrege_temp, i+1)
+
+                    # Créer l'unité de remplissage
+                    seuil_alerte_val = random.choice([3, 5, 8, 10])
+                    if type_unite == "Horaire":
+                        heure_min_val = heure_debut
+                        heure_max_val = heure_fin
+                    else:
+                        heure_min_val = None
+                        heure_max_val = None
+                    largeur_val = random.choice([60, 80, 100, 120])
+
+                    unite_remplissage_obj = UniteRemplissage.objects.create(
+                        activite=activite_obj,
+                        ordre=i + 1,
+                        nom=nom,
+                        abrege=abrege,
+                        date_debut=activite["date_debut"],
+                        date_fin=activite["date_fin"],
+                        seuil_alerte=seuil_alerte_val,
+                        heure_min=heure_min_val,
+                        heure_max=heure_max_val,
+                        afficher_page_accueil=True,
+                        afficher_grille_conso=True,
+                        largeur=largeur_val
+                    )
+
+                    # Associer les unités de consommation
+                    if unites_disponibles.exists():
+                        unites_a_lier = list(unites_disponibles)[
+                            :min(2, unites_disponibles.count())
+                        ]
+                        unite_remplissage_obj.unites.add(*unites_a_lier)
+
+                if nb_unites_remplissage > 0:
+                    msg = "  -> {} unité(s) de remplissage créée(s)".format(
+                        nb_unites_remplissage)
+                    print(msg)
+
+                # Créer 1 à 5 catégories de tarifs pour cette activité
+                nb_categories_tarifs = random.randint(1, 5)
+                categories_tarifs_crees = []
+
+                for i in range(nb_categories_tarifs):
+                    # Noms de catégories selon le type d'activité
+                    if ("stage" in activite["nom"].lower() or
+                            "centre de loisirs" in activite["nom"].lower()):
+                        noms_categories = [
+                            "Tarif standard", "Tarif réduit", "Tarif famille",
+                            "Tarif adhérent", "Tarif extérieur"
+                        ]
+                    elif "sport" in activite["nom"].lower():
+                        noms_categories = [
+                            "Licencié", "Non licencié", "Jeune", "Adulte",
+                            "Famille"
+                        ]
+                    else:
+                        noms_categories = [
+                            "Plein tarif", "Tarif réduit", "Tarif enfant",
+                            "Tarif étudiant", "Tarif groupe"
+                        ]
+
+                    nom_categorie = noms_categories[i % len(noms_categories)]
+                    categorie_obj = CategorieTarif.objects.create(
+                        activite=activite_obj,
+                        nom=nom_categorie
+                    )
+                    categories_tarifs_crees.append(categorie_obj)
+
+                if nb_categories_tarifs > 0:
+                    msg = "  -> {} catégorie(s) de tarifs créée(s)".format(
+                        nb_categories_tarifs)
+                    print(msg)
+
+                # Créer 1 à 5 noms de tarifs pour cette activité
+                nb_noms_tarifs = random.randint(1, 5)
+                noms_tarifs_crees = []
+
+                for i in range(nb_noms_tarifs):
+                    # Noms de tarifs selon le type d'activité
+                    if ("stage" in activite["nom"].lower() or
+                            "centre de loisirs" in activite["nom"].lower()):
+                        noms_tarifs = [
+                            "Semaine complète", "Demi-journée", "Jour unique",
+                            "Forfait 5 jours", "Prestation ponctuelle"
+                        ]
+                    elif "sport" in activite["nom"].lower():
+                        noms_tarifs = [
+                            "Saison complète", "Match unique", "Stage",
+                            "Compétition", "Entraînement"
+                        ]
+                    else:
+                        noms_tarifs = [
+                            "Atelier complet", "Séance unique", "Cycle",
+                            "Module optionnel", "Forfait mensuel"
+                        ]
+
+                    nom_tarif = noms_tarifs[i % len(noms_tarifs)]
+                    nom_tarif_obj = NomTarif.objects.create(
+                        activite=activite_obj,
+                        nom=nom_tarif
+                    )
+                    noms_tarifs_crees.append(nom_tarif_obj)
+
+                if nb_noms_tarifs > 0:
+                    msg = "  -> {} nom(s) de tarifs créé(s)".format(
+                        nb_noms_tarifs)
+                    print(msg)
+
+                # Créer 1 à 5 tarifs pour chaque nom de tarif
+                total_tarifs_crees = 0
+
+                for nom_tarif_obj in noms_tarifs_crees:
+                    nb_tarifs_pour_nom = random.randint(1, 5)
+
+                    for j in range(nb_tarifs_pour_nom):
+                        # Type de tarif selon le type d'activité
+                        is_stage = "stage" in activite["nom"].lower()
+                        is_centre = (
+                            "centre de loisirs" in activite["nom"].lower()
+                        )
+                        if (is_stage or is_centre):
+                            types_tarifs = ["JOURN", "FORFAIT", "CREDIT"]
+                        elif "sport" in activite["nom"].lower():
+                            types_tarifs = ["FORFAIT", "EVENEMENT", "BAREME"]
+                        else:
+                            types_tarifs = [
+                                "JOURN", "FORFAIT", "CREDIT", "EVENEMENT"
+                            ]
+
+                        type_tarif = random.choice(types_tarifs)
+
+                        # Méthode de calcul
+                        methodes = [
+                            "montant_unique", "montant_heure",
+                            "montant_quantite"
+                        ]
+                        if type_tarif == "FORFAIT":
+                            methodes = ["montant_unique"]
+                        elif type_tarif == "JOURN":
+                            methodes = ["montant_unique", "montant_heure"]
+
+                        methode = random.choice(methodes)
+
+                        # Créer le tarif pour ce nom de tarif spécifique
+                        description_tarif = "Tarif {} - {} - {}".format(
+                            type_tarif, methode, nom_tarif_obj.nom)
+                        index_nom = noms_tarifs_crees.index(nom_tarif_obj)
+                        code_compta_tarif = "CODE{}{}{}".format(
+                            activite_index, index_nom, j)
+                        # Utiliser 3 premiers caractères du nom comme abrége
+                        abrege_nom = nom_tarif_obj.nom[:3].upper()
+                        label_prestation_tarif = "Prestation {} {} {}".format(
+                            activite['abrege'], abrege_nom, j+1)
+
+                        tarif_obj = Tarif.objects.create(
+                            activite=activite_obj,
+                            type=type_tarif,
+                            nom_tarif=nom_tarif_obj,
+                            date_debut=activite["date_debut"],
+                            date_fin=activite["date_fin"],
+                            methode=methode,
+                            description=description_tarif,
+                            tva=random.choice([0.0, 5.5, 10.0, 20.0]),
+                            code_compta=code_compta_tarif,
+                            label_prestation=label_prestation_tarif
+                        )
+
+                        # Associer les catégories de tarifs
+                        if categories_tarifs_crees:
+                            nb_categories = min(
+                                2, len(categories_tarifs_crees))
+                            categories_a_lier = random.sample(
+                                categories_tarifs_crees, nb_categories
+                            )
+                            tarif_obj.categories_tarifs.add(*categories_a_lier)
+
+                        total_tarifs_crees += 1
+
+                if total_tarifs_crees > 0:
+                    msg_format = "  -> {} tarif(s) créés pour noms de tarifs"
+                    msg_text = msg_format.format(total_tarifs_crees)
+                    print(msg_text)
 
         # Émetteurs de règlement
         mode_especes = ModeReglement.objects.get(label="Espèces")
