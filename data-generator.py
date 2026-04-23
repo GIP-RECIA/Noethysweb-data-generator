@@ -1069,6 +1069,9 @@ def generate_data():
                 CompteBancaire.objects.create(**compte)
                 print(f"CompteBancaire créé: {compte['nom']}")
 
+        # Récupérer la structure pour l'associer aux activités
+        structure = Structure.objects.first()
+
         # Activités
         date_debut = date.today()
         date_fin = date_debut + timedelta(days=365)
@@ -1080,31 +1083,53 @@ def generate_data():
                 "date_debut": date_debut + timedelta(days=30),
                 "date_fin": date_debut + timedelta(days=40),
                 "nbre_inscrits_max": 50,
-                "portail_inscriptions_affichage": "PERIODE"
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "structure": structure
             },
             {
-                "nom": "Atelier périscolaire - Mercredi",
-                "abrege": "APS-Mercredi",
-                "date_debut": date_debut,
-                "date_fin": date_fin,
-                "nbre_inscrits_max": 30,
-                "portail_inscriptions_affichage": "TOUJOURS"
-            },
-            {
-                "nom": "Stage d'été - Sport et nature",
-                "abrege": "SE-Ete",
+                "nom": "Centre de loisirs - Vacances d'été",
+                "abrege": "CL-Eté",
                 "date_debut": date_debut + timedelta(days=120),
-                "date_fin": date_debut + timedelta(days=135),
-                "nbre_inscrits_max": 40,
-                "portail_inscriptions_affichage": "PERIODE"
+                "date_fin": date_debut + timedelta(days=140),
+                "nbre_inscrits_max": 80,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "structure": structure
             },
             {
-                "nom": "Cantine scolaire",
-                "abrege": "CAN-Scolaire",
+                "nom": "Stage sportif - Multi-activités",
+                "abrege": "SS-Multi",
+                "date_debut": date_debut + timedelta(days=60),
+                "date_fin": date_debut + timedelta(days=65),
+                "nbre_inscrits_max": 30,
+                "portail_inscriptions_affichage": "PERIODE",
+                "structure": structure
+            },
+            {
+                "nom": "Atelier créatif - Arts plastiques",
+                "abrege": "AC-Arts",
+                "date_debut": date_debut + timedelta(days=90),
+                "date_fin": date_debut + timedelta(days=92),
+                "nbre_inscrits_max": 15,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "structure": structure
+            },
+            {
+                "nom": "Sortie nature - Découverte faune",
+                "abrege": "SN-Nature",
+                "date_debut": date_debut + timedelta(days=180),
+                "date_fin": date_debut + timedelta(days=181),
+                "nbre_inscrits_max": 25,
+                "portail_inscriptions_affichage": "PERIODE",
+                "structure": structure
+            },
+            {
+                "nom": "Accueil périscolaire - Soir",
+                "abrege": "APP-Soir",
                 "date_debut": date_debut,
                 "date_fin": date_fin,
-                "nbre_inscrits_max": 100,
-                "portail_inscriptions_affichage": "TOUJOURS"
+                "nbre_inscrits_max": 40,
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "structure": structure
             },
             {
                 "nom": "Accueil périscolaire - Matin",
@@ -1112,7 +1137,8 @@ def generate_data():
                 "date_debut": date_debut,
                 "date_fin": date_fin,
                 "nbre_inscrits_max": 60,
-                "portail_inscriptions_affichage": "TOUJOURS"
+                "portail_inscriptions_affichage": "TOUJOURS",
+                "structure": structure
             }
         ]
 
