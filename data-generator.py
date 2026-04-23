@@ -988,7 +988,8 @@ def generate_data():
 
         # Importer les modèles de l'étape 3
         from core.models import (
-            Activite, CompteBancaire, ModeReglement, Emetteur
+            Activite, CompteBancaire, ModeReglement, Emetteur,
+            TypeGroupeActivite, FactureRegie
         )
         from datetime import date, timedelta
 
@@ -1072,6 +1073,61 @@ def generate_data():
         # Récupérer la structure pour l'associer aux activités
         structure = Structure.objects.first()
 
+        # Régies de facturation
+        compte_principal = CompteBancaire.objects.get(nom="Compte principal")
+        compte_secondaire = CompteBancaire.objects.get(nom="Compte secondaire")
+
+        regies_facturation = [
+            {
+                "nom": "Régie principale - Mairie",
+                "numclitipi": "123456789",
+                "email_regisseur": "regisseur@testville.fr",
+                "compte_bancaire": compte_principal
+            },
+            {
+                "nom": "Régie secondaire - Association",
+                "numclitipi": "987654321",
+                "email_regisseur": "regisseur@association-test.fr",
+                "compte_bancaire": compte_secondaire
+            }
+        ]
+
+        for regie in regies_facturation:
+            if not FactureRegie.objects.filter(nom=regie["nom"]).exists():
+                FactureRegie.objects.create(**regie)
+                print(f"FactureRegie créée: {regie['nom']}")
+
+        # Groupes d'activités
+        groupes_activites = [
+            {"nom": "Centres de loisirs", "observations": "Activités centres"},
+            {"nom": "Stages sportifs", "observations": "Stages sportifs"},
+            {"nom": "Ateliers créatifs", "observations": "Ateliers arts"},
+            {"nom": "Sorties nature", "observations": "Découverte nat"},
+            {"nom": "Accueil périscolaire", "observations": "Avant/après"}
+        ]
+
+        for groupe in groupes_activites:
+            if not TypeGroupeActivite.objects.filter(
+                    nom=groupe["nom"]).exists():
+                TypeGroupeActivite.objects.create(
+                    nom=groupe["nom"],
+                    observations=groupe["observations"],
+                    structure=structure
+                )
+                print(f"TypeGroupeActivite créé: {groupe['nom']}")
+
+        # Récupérer les groupes créés pour les affecter aux activités
+        groupe_centres = TypeGroupeActivite.objects.get(
+            nom="Centres de loisirs")
+        groupe_stages = TypeGroupeActivite.objects.get(
+            nom="Stages sportifs")
+        groupe_ateliers = TypeGroupeActivite.objects.get(
+            nom="Ateliers créatifs")
+        groupe_sorties = TypeGroupeActivite.objects.get(
+            nom="Sorties nature")
+        groupe_periscolaire = TypeGroupeActivite.objects.get(
+            nom="Accueil périscolaire")
+
         # Activités
         date_debut = date.today()
         date_fin = date_debut + timedelta(days=365)
@@ -1144,7 +1200,20 @@ def generate_data():
 
         for activite in activites:
             if not Activite.objects.filter(nom=activite["nom"]).exists():
-                Activite.objects.create(**activite)
+                activite_obj = Activite.objects.create(**activite)
+
+                # Ajouter les groupes d'activités appropriés
+                if "Centre de loisirs" in activite["nom"]:
+                    activite_obj.groupes_activites.add(groupe_centres)
+                elif "Stage sportif" in activite["nom"]:
+                    activite_obj.groupes_activites.add(groupe_stages)
+                elif "Atelier créatif" in activite["nom"]:
+                    activite_obj.groupes_activites.add(groupe_ateliers)
+                elif "Sortie nature" in activite["nom"]:
+                    activite_obj.groupes_activites.add(groupe_sorties)
+                elif "Accueil périscolaire" in activite["nom"]:
+                    activite_obj.groupes_activites.add(groupe_periscolaire)
+
                 print(f"Activite créée: {activite['nom']}")
 
         # Émetteurs de règlement
