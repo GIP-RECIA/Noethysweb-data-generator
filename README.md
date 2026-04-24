@@ -24,6 +24,12 @@ Ensuite voici les commandes disponibles :
 - `generate_data()` : Génère les données de test
 - `clean_and_generate()` : Nettoie et génère les données de test
 
+Que ce soit pour `generate_data()` ou `clean_and_generate()`, vous pouvez spécifier le mode de création des comptes :
+- `generate_data(mode_compte="famille")` : Crée un compte Django par famille
+- `generate_data(mode_compte="individu")` : Crée un compte Django par parent
+
+Par défaut, le mode `famille` est utilisé.
+
 Identifiants de connexion de l'administrateur :
 - Email : admin
 - Mot de passe : password

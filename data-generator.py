@@ -173,9 +173,120 @@ def create_individu(famille, nom_famille, type_individu, index_famille,
     return individu, rattachement
 
 
-def generate_data():
-    """Génère toutes les données de base par étapes successives"""
+def create_compte_utilisateur(famille_obj, mode_compte="famille"):
+    """
+    Crée un compte utilisateur Django selon le mode choisi
+
+    Args:
+        famille_obj: objet Famille auquel rattacher le compte
+        mode_compte: 'famille' ou 'individu'
+
+    Returns:
+        Utilisateur: l'utilisateur créé
+    """
+    from core.models import Utilisateur
+    from fiche_famille.utils import utils_internet
+
+    # Création et enregistrement des codes pour le portail
+    internet_identifiant = utils_internet.CreationIdentifiant(
+        IDfamille=famille_obj.pk)
+    internet_mdp, date_expiration_mdp = utils_internet.CreationMDP()
+
+    # Mémorisation des codes internet dans la table familles
+    famille_obj.internet_identifiant = internet_identifiant
+    famille_obj.internet_mdp = internet_mdp
+
+    # Création de l'utilisateur selon le mode
+    if mode_compte == "famille":
+        utilisateur = Utilisateur(
+            username=internet_identifiant,
+            categorie="famille",
+            force_reset_password=True,
+            date_expiration_mdp=date_expiration_mdp
+        )
+        utilisateur.save()
+        utilisateur.set_password(internet_mdp)
+        utilisateur.save()
+
+        # Association de l'utilisateur à la famille
+        famille_obj.utilisateur = utilisateur
+
+    elif mode_compte == "individu":
+        # Mode individu: on ne crée pas de compte utilisateur ici
+        # Les comptes seront créés pour chaque parent individuellement
+        utilisateur = None
+        famille_obj.utilisateur = None
+
+    else:
+        raise ValueError(f"Mode de compte non valide: {mode_compte}")
+
+    return utilisateur
+
+
+def create_compte_individu(parent, index_parent):
+    """
+    Crée un compte utilisateur Django pour un individu parent
+
+    Args:
+        parent: objet Individu (parent) pour lequel créer le compte
+        index_parent: index pour la reproductibilité
+
+    Returns:
+        Utilisateur: l'utilisateur créé
+    """
+    from core.models import Utilisateur
+
+    # Créer un identifiant unique basé sur l'individu
+    identifiant_base = (
+        f"{parent.nom.lower()}_{parent.prenom.lower()}_{index_parent}"
+    )
+    username = identifiant_base.replace(" ", "_").replace("-", "_")[:30]
+
+    # S'assurer que l'username est unique
+    counter = 1
+    original_username = username
+    while Utilisateur.objects.filter(username=username).exists():
+        username = f"{original_username}_{counter}"
+        counter += 1
+
+    # Générer un mot de passe
+    import secrets
+    import string
+    password = ''.join(
+        secrets.choice(string.ascii_letters + string.digits)
+        for _ in range(10)
+    )
+
+    # Créer l'utilisateur
+    utilisateur = Utilisateur(
+        username=username,
+        categorie="individu",
+        force_reset_password=True,
+        date_expiration_mdp=None  # Pas d'expiration pour les individus
+    )
+    utilisateur.save()
+    utilisateur.set_password(password)
+    utilisateur.save()
+
+    # Associer l'individu à l'utilisateur
+    parent.utilisateur = utilisateur
+    parent.save()
+
+    print(f"  -> Compte individuel créé pour {parent.prenom} {parent.nom}: "
+          f"{username}")
+
+    return utilisateur
+
+
+def generate_data(mode_compte="famille"):
+    """Génère toutes les données de base par étapes successives
+
+    Args:
+        mode_compte: 'famille' (défaut) ou 'individu' pour choisir le mode
+                     de création des comptes
+    """
     print("=== GÉNÉRATION DES DONNÉES DE BASE ===")
+    print(f"Mode de création des comptes: {mode_compte}")
 
     # Importer les modèles Django nécessaires
     from core.models import (
@@ -1122,16 +1233,16 @@ def generate_data():
                 "bic": "BNPAFRPPXXX",
                 "code_ics": "FR76ZZZ123456",
                 "dft_titulaire": "Mairie de Test Ville",
-                "dft_iban": "FR7630004000031234567890143",
-                "adresse_service": "Service Financier",
-                "adresse_rue": "Rue de la Mairie",
-                "adresse_numero": "1",
-                "adresse_batiment": "Bâtiment A",
-                "adresse_etage": "1er étage",
-                "adresse_boite": "101",
-                "adresse_cp": "37000",
-                "adresse_ville": "TESTVILLE",
-                "adresse_pays": "FR"
+                "dft_iban": "FR7630004000031234567890143"  # ,
+                # "adresse_service": "Service Financier",
+                # "adresse_rue": "Rue de la Mairie",
+                # "adresse_numero": "1",
+                # "adresse_batiment": "Bâtiment A",
+                # "adresse_etage": "1er étage",
+                # "adresse_boite": "101",
+                # "adresse_cp": "37000",
+                # "adresse_ville": "TESTVILLE",
+                # "adresse_pays": "FR"
             },
             {
                 "nom": "Compte secondaire",
@@ -1147,16 +1258,16 @@ def generate_data():
                 "bic": "BNPAFRPPXXX",
                 "code_ics": "FR76ZZZ654321",
                 "dft_titulaire": "Association Test",
-                "dft_iban": "FR7630004000039876543210256",
-                "adresse_service": "Trésorerie",
-                "adresse_rue": "Avenue des Sports",
-                "adresse_numero": "15",
-                "adresse_batiment": "Bâtiment B",
-                "adresse_etage": "RDC",
-                "adresse_boite": "200",
-                "adresse_cp": "37000",
-                "adresse_ville": "TESTVILLE",
-                "adresse_pays": "FR"
+                "dft_iban": "FR7630004000039876543210256"  # ,
+                # "adresse_service": "Trésorerie",
+                # "adresse_rue": "Avenue des Sports",
+                # "adresse_numero": "15",
+                # "adresse_batiment": "Bâtiment B",
+                # "adresse_etage": "RDC",
+                # "adresse_boite": "200",
+                # "adresse_cp": "37000",
+                # "adresse_ville": "TESTVILLE",
+                # "adresse_pays": "FR"
             }
         ]
 
@@ -2660,31 +2771,10 @@ def generate_data():
             famille_obj = Famille.objects.create()
 
             # Importer les utilitaires nécessaires
-            from fiche_famille.utils import utils_internet
             from core.utils import utils_texte
 
-            # Création et enregistrement des codes pour le portail
-            internet_identifiant = utils_internet.CreationIdentifiant(
-                IDfamille=famille_obj.pk)
-            internet_mdp, date_expiration_mdp = utils_internet.CreationMDP()
-
-            # Mémorisation des codes internet dans la table familles
-            famille_obj.internet_identifiant = internet_identifiant
-            famille_obj.internet_mdp = internet_mdp
-
-            # Création de l'utilisateur
-            utilisateur = Utilisateur(
-                username=internet_identifiant,
-                categorie="famille",
-                force_reset_password=True,
-                date_expiration_mdp=date_expiration_mdp
-            )
-            utilisateur.save()
-            utilisateur.set_password(internet_mdp)
-            utilisateur.save()
-
-            # Association de l'utilisateur à la famille
-            famille_obj.utilisateur = utilisateur
+            # Créer le compte utilisateur selon le mode choisi
+            create_compte_utilisateur(famille_obj, mode_compte)
 
             # Déterminer le nombre de parents (1-2) et d'enfants (1-3)
             nb_parents = 1 if (i % 3) == 0 else 2  # 1 parent sur 3, sinon 2
@@ -2706,6 +2796,12 @@ def generate_data():
                 if j == 0:
                     famille_obj.allocataire = parent
                     famille_obj.titulaire_helios = parent
+
+                # Créer un compte individuel pour chaque parent
+                # si mode = 'individu'
+                if mode_compte == "individu":
+                    index_parent = i * 10 + j
+                    create_compte_individu(parent, index_parent)
 
             # Remplir les autres champs de la famille avec les infos du premier
             # parent
@@ -2768,9 +2864,48 @@ def generate_data():
         print(f"Erreur lors de la génération des données: {e}")
 
 
-def clean_and_generate():
-    """Nettoie la base et génère les données de base en une seule commande"""
+def clean_and_generate(mode_compte="famille"):
+    """Nettoie la base et génère les données de base en une seule commande
+    
+    Args:
+        mode_compte: 'famille' (défaut) ou 'individu' pour choisir le mode
+                     de création des comptes
+    """
     print("=== NETTOYAGE COMPLET + GÉNÉRATION DONNÉES ===")
     clean_data_strict()
-    generate_data()
+    generate_data(mode_compte)
     print("=== OPÉRATION TERMINÉE ===")
+
+
+def main():
+    """Fonction principale pour l'utilisation en ligne de commande"""
+    import sys
+    
+    mode = "famille"  # Mode par défaut
+    
+    # Vérifier les arguments de la ligne de commande
+    if len(sys.argv) > 1:
+        if sys.argv[1] in ["famille", "individu"]:
+            mode = sys.argv[1]
+        elif sys.argv[1] in ["--help", "-h"]:
+            print("Usage: python data-generator.py [mode]")
+            print("")
+            print("Modes disponibles:")
+            print("  famille   (défaut) - Crée un compte Django par famille")
+            print("  individu             - Crée un compte Django par parent")
+            print("")
+            print("Exemples:")
+            print("  python data-generator.py famille")
+            print("  python data-generator.py individu")
+            return
+        else:
+            print(f"Mode non valide: {sys.argv[1]}")
+            print("Utilisez --help pour voir les options disponibles")
+            return
+    
+    print(f"Lancement du générateur de données en mode: {mode}")
+    clean_and_generate(mode)
+
+
+if __name__ == "__main__":
+    main()
