@@ -2859,6 +2859,83 @@ def generate_data(mode_compte="famille"):
         print(msg_noms)
 
         print("\n=== GÉNÉRATION TERMINÉE ===")
+        # Étape 6 : Inscriptions
+        print("\n--- ÉTAPE 6 : INSCRIPTIONS ---")
+
+        from core.models import Inscription
+
+        # Récupérer toutes les activités qui ont à la fois un groupe ET une catégorie de tarif
+        activites_disponibles = []
+        for act in Activite.objects.all():
+            a_groupe = Groupe.objects.filter(activite=act).exists()
+            a_categorie = CategorieTarif.objects.filter(activite=act).exists()
+            if a_groupe and a_categorie:
+                activites_disponibles.append(act)
+
+        if not activites_disponibles:
+            print("Aucune activité disponible pour les inscriptions (groupes ou catégories manquants)")
+        else:
+            print(f"{len(activites_disponibles)} activités disponibles pour les inscriptions")
+
+            total_inscriptions = 0
+
+            # Pour chaque famille, inscrire ses enfants à 1-3 activités
+            for idx_famille, famille_obj in enumerate(Famille.objects.all()):
+                # Récupérer les enfants de cette famille (categorie=2)
+                from core.models import Rattachement
+                rattachements_enfants = Rattachement.objects.filter(
+                    famille=famille_obj,
+                    categorie=2
+                ).select_related('individu')
+
+                for rattachement in rattachements_enfants:
+                    enfant = rattachement.individu
+
+                    # Seed reproductible par enfant
+                    random.seed(42 + enfant.pk)
+
+                    # Choisir 1 à 3 activités aléatoires sans doublon
+                    nb_inscriptions = random.randint(1, 3)
+                    activites_choisies = random.sample(
+                        activites_disponibles,
+                        min(nb_inscriptions, len(activites_disponibles))
+                    )
+
+                    for activite_obj in activites_choisies:
+                        # Vérifier que l'inscription n'existe pas déjà
+                        deja_inscrit = Inscription.objects.filter(
+                            individu=enfant,
+                            famille=famille_obj,
+                            activite=activite_obj
+                        ).exists()
+
+                        if deja_inscrit:
+                            continue
+
+                        # Prendre le premier groupe de l'activité
+                        groupe_obj = Groupe.objects.filter(activite=activite_obj).first()
+
+                        # Prendre la première catégorie de tarif de l'activité
+                        categorie_obj = CategorieTarif.objects.filter(activite=activite_obj).first()
+
+                        # Date de début = date_debut de l'activité ou aujourd'hui
+                        from datetime import date
+                        date_debut_inscription = activite_obj.date_debut or date.today()
+
+                        Inscription.objects.create(
+                            individu=enfant,
+                            famille=famille_obj,
+                            activite=activite_obj,
+                            groupe=groupe_obj,
+                            categorie_tarif=categorie_obj,
+                            date_debut=date_debut_inscription,
+                            date_fin=activite_obj.date_fin,
+                            statut="ok",
+                            internet_reservations=True
+                        )
+                        total_inscriptions += 1
+
+            print(f"Total : {total_inscriptions} inscriptions créées")
 
     except Exception as e:
         print(f"Erreur lors de la génération des données: {e}")
